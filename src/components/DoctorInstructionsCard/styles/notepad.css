@@ -1,0 +1,1227 @@
+/* ============================================================================
+   notepad.css — Doctor's Notepad (TipTap rich editor)
+   Design: "Notion meets a medical clipboard". Every value matches the spec.
+
+   ORDER
+     1. Google Fonts
+     2. :root tokens
+     3. .doctor-notepad outer shell
+     4. .np-header
+     5. .np-toolbar / .tb-*
+     6. .ProseMirror — editor typography
+     7. Chips
+     8. Popups (slash + mention) — rendered in <body> via Tippy
+     9. Mention popover
+    10. Vitals table
+    11. Status bar
+    12. Footer / buttons
+    13. Animations
+   ============================================================================ */
+
+/* 1. FONTS ------------------------------------------------------------------ */
+@import url('https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,300..900&family=Montserrat:ital,wght@0,300..900;1,300..900&display=swap');
+
+/* 2. TOKENS — Jano Health design system ------------------------------------- */
+:root {
+  /* Jano primitives (from landing-page jano-tokens.css) */
+  --jano-crimson: #e54b4b;
+  --jano-crimson-600: #d53838;
+  --jano-crimson-700: #bf2b2b;
+  --jano-crimson-50: #ffecee;
+  --jano-crimson-100: #ffdada;
+  --jano-crimson-200: #fadbdb;
+  --jano-crimson-300: #f4aeae;
+  --jano-crimson-pink: #f6e7e7;
+  --jano-orange: #ff4f04;
+  --jano-amber: #ffd000;
+  --jano-green: #12b05f;
+
+  --ink-1000: #252323;
+  --ink-700: #4f4d4d;
+  --ink-600: #6d7576;
+  --ink-500: #8f8f8f;
+  --ink-400: #babab5;
+  --ink-300: #c9c9c5;
+  --ink-250: #ced1d1;
+  --ink-200: #d6dbdb;
+  --ink-75: #efefed;
+  --ink-25: #f7f7f5;
+  --ink-0: #ffffff;
+
+  /* Radius scale */
+  --np-radius-xs: 4px;
+  --np-radius-sm: 8px;
+  --np-radius-md: 12px;
+  --np-radius-lg: 16px;
+  --np-radius-xl: 24px;
+  --np-radius-pill: 999px;
+
+  /* Fonts (serif dropped — name kept so selectors keep working) */
+  --np-font-ui: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --np-font-serif: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --np-font-display: 'Montserrat', 'Figtree', sans-serif;
+
+  /* Borders & surfaces */
+  --np-border: #d6dbdb;
+  --np-border-strong: #c9c9c5;
+  --np-border-soft: #efefed;
+  --np-bar-bg: #f7f7f5;
+  --np-white: #ffffff;
+
+  /* Brand accent — all old purple tokens now map to crimson */
+  --np-purple: #e54b4b;
+  --np-purple-deep: #d53838;
+  --np-purple-tint: #ffecee;
+  --np-purple-tint-2: #f6e7e7;
+  --np-violet: #f4aeae;
+
+  /* Text / ink */
+  --np-text: #252323;
+  --np-text-soft: #4f4d4d;
+  --np-text-mute: #8f8f8f;
+  --np-text-faint: #babab5;
+
+  /* Shadows — warm-grey, short, downward */
+  --np-shadow-card: 0 8px 16px -6px rgba(99, 111, 114, 0.25);
+  --np-shadow-pop: 0 12px 28px -10px rgba(99, 111, 114, 0.35);
+  --np-shadow-popover: 0 12px 28px -10px rgba(99, 111, 114, 0.35);
+}
+
+/* 3. OUTER SHELL ------------------------------------------------------------ */
+.doctor-notepad,
+.doctor-notepad * {
+  box-sizing: border-box;
+}
+
+.doctor-notepad {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  background: var(--np-white);
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-lg);
+  box-shadow: var(--np-shadow-card);
+  overflow: hidden;
+  font-family: var(--np-font-ui);
+  color: var(--np-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Fullscreen mode (header toggle) */
+.doctor-notepad.is-fullscreen {
+  position: fixed;
+  inset: 24px;
+  z-index: 2000;
+  max-width: none;
+  box-shadow: var(--np-shadow-pop);
+}
+
+/* 4. HEADER ----------------------------------------------------------------- */
+.np-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 9px 14px;
+  background: var(--np-bar-bg);
+  border-bottom: 1px solid var(--np-border-soft);
+}
+
+.np-header__left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.np-header__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--np-radius-sm);
+  background: var(--np-purple);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.np-header__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--np-text);
+  letter-spacing: -0.01em;
+}
+
+/* save-status pill */
+.np-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--np-radius-pill);
+  font-size: 10.5px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: opacity 300ms ease, background-color 300ms ease, color 300ms ease,
+    border-color 300ms ease;
+}
+.np-status-pill.is-saved {
+  background: #e7f8ef;
+  color: #0b7a41;
+  border-color: #a8e5c6;
+}
+.np-status-pill.is-unsaved {
+  background: #fff6cc;
+  color: #7a6300;
+  border-color: #ffe780;
+}
+
+.np-header__right {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.np-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: transparent;
+  color: var(--np-text-mute);
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.np-icon-btn:hover {
+  background: var(--np-border-soft);
+  color: var(--np-text);
+}
+
+/* 5. TOOLBAR ---------------------------------------------------------------- */
+.np-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 14px;
+  background: var(--np-bar-bg);
+  border-bottom: 1px solid var(--np-border-soft);
+}
+
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.tb-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--np-border);
+  margin: 0 5px;
+  flex-shrink: 0;
+}
+
+.tb-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: transparent;
+  color: var(--np-text-soft);
+  cursor: pointer;
+  font-family: var(--np-font-ui);
+  transition: background-color 120ms ease, color 120ms ease,
+    transform 120ms ease;
+}
+.tb-btn:hover {
+  background: var(--np-purple-tint-2);
+  color: var(--np-purple);
+  transform: scale(1.06);
+}
+.tb-btn.is-active {
+  background: var(--np-purple-tint);
+  color: var(--np-purple);
+  font-weight: 600;
+}
+.tb-btn.is-active:hover {
+  background: var(--np-purple-tint);
+}
+.tb-btn:disabled {
+  opacity: 0.32;
+  cursor: not-allowed;
+  transform: none;
+  background: transparent;
+  color: var(--np-text-soft);
+}
+
+/* text-glyph toolbar buttons (B / I / U / S) */
+.tb-btn--glyph {
+  font-size: 14px;
+  line-height: 1;
+}
+.tb-glyph-bold {
+  font-weight: 700;
+}
+.tb-glyph-italic {
+  font-style: italic;
+  font-weight: 500;
+}
+.tb-glyph-underline {
+  text-decoration: underline;
+  font-weight: 500;
+}
+.tb-glyph-strike {
+  text-decoration: line-through;
+  font-weight: 500;
+  font-size: 12px;
+}
+
+/* block-type select */
+.tb-select {
+  height: 30px;
+  padding: 0 22px 0 8px;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-sm);
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%238f8f8f' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 6px center;
+  font-family: var(--np-font-ui);
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--np-text-soft);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color 120ms ease;
+}
+.tb-select:hover {
+  border-color: var(--np-violet);
+}
+.tb-select:focus {
+  outline: none;
+  border-color: var(--np-purple);
+}
+
+/* color buttons */
+.tb-color {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+.tb-color:hover {
+  background: var(--np-purple-tint);
+}
+.tb-color__swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--np-radius-xs);
+  border: 1.5px solid var(--np-border);
+  transition: border-color 120ms ease;
+}
+.tb-color:hover .tb-color__swatch {
+  border-color: var(--np-violet);
+}
+/* the real <input type=color> sits invisibly over the button */
+.tb-color__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* 6. EDITOR / .ProseMirror -------------------------------------------------- */
+.np-editor-area {
+  background: var(--np-white);
+}
+.doctor-notepad.is-fullscreen .np-editor-area {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.doctor-notepad .ProseMirror {
+  padding: 20px 24px;
+  min-height: 220px;
+  outline: none;
+  font-family: var(--np-font-ui);
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--np-text-soft);
+  line-height: 1.75;
+}
+
+.doctor-notepad .ProseMirror > *:first-child {
+  margin-top: 0;
+}
+
+.doctor-notepad .ProseMirror h1 {
+  font-family: var(--np-font-ui);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--np-text);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+  margin: 0 0 4px;
+}
+.doctor-notepad .ProseMirror h2 {
+  font-family: var(--np-font-ui);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--np-text);
+  letter-spacing: -0.01em;
+  margin: 14px 0 4px;
+}
+.doctor-notepad .ProseMirror h3 {
+  font-family: var(--np-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--np-text-mute);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 12px 0 4px;
+}
+.doctor-notepad .ProseMirror p {
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--np-text-soft);
+  line-height: 1.75;
+  margin: 0 0 8px;
+}
+.doctor-notepad .ProseMirror strong {
+  font-weight: 600;
+  color: var(--np-text);
+}
+.doctor-notepad .ProseMirror em {
+  font-style: italic;
+}
+.doctor-notepad .ProseMirror u {
+  text-decoration: underline;
+}
+.doctor-notepad .ProseMirror s {
+  text-decoration: line-through;
+}
+.doctor-notepad .ProseMirror mark {
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.doctor-notepad .ProseMirror blockquote {
+  font-family: var(--np-font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--np-text-mute);
+  border-left: 3px solid var(--np-violet);
+  padding: 8px 14px;
+  background: var(--np-purple-tint);
+  border-radius: 0 var(--np-radius-sm) var(--np-radius-sm) 0;
+  margin: 10px 0;
+}
+.doctor-notepad .ProseMirror blockquote p {
+  font-family: var(--np-font-serif);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 15px;
+  color: var(--np-text-mute);
+  margin: 0;
+}
+
+.doctor-notepad .ProseMirror ul,
+.doctor-notepad .ProseMirror ol {
+  padding-left: 22px;
+  margin: 4px 0 8px;
+}
+.doctor-notepad .ProseMirror li {
+  font-size: 13.5px;
+  color: var(--np-text-soft);
+  line-height: 1.75;
+  margin-bottom: 2px;
+}
+.doctor-notepad .ProseMirror li p {
+  margin: 0;
+}
+
+.doctor-notepad .ProseMirror hr {
+  border: none;
+  border-top: 1.5px solid var(--np-border-soft);
+  margin: 16px 0;
+}
+
+.doctor-notepad .ProseMirror a {
+  color: var(--np-purple);
+  text-decoration: underline;
+}
+
+/* selected atom node (chip) outline */
+.doctor-notepad .ProseMirror .ProseMirror-selectednode {
+  outline: 2px solid var(--np-violet);
+  outline-offset: 1px;
+  border-radius: var(--np-radius-pill);
+}
+
+/* placeholder — shown only while the editor is empty */
+.doctor-notepad .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  pointer-events: none;
+  color: var(--np-text-faint);
+  font-family: var(--np-font-ui);
+  font-weight: 300;
+  font-size: 14px;
+}
+
+/* 7. CHIPS ------------------------------------------------------------------ */
+.np-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: var(--np-radius-pill);
+  font-family: var(--np-font-ui);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  vertical-align: middle;
+  margin: 0 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  transition: opacity 150ms ease, transform 150ms ease;
+}
+.np-chip:hover {
+  opacity: 0.85;
+  transform: scale(0.98);
+}
+.np-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+.np-chip__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 9px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.np-chip--medicine {
+  background: #e7f8ef;
+  color: #0b7a41;
+  border-color: #a8e5c6;
+}
+.np-chip--diagnosis {
+  background: #ffecee;
+  color: #bf2b2b;
+  border-color: #f4aeae;
+}
+.np-chip--labtest {
+  background: #fff6cc;
+  color: #7a6300;
+  border-color: #ffe780;
+}
+.np-chip--patient {
+  background: #efefed;
+  color: #4f4d4d;
+  border-color: #d6dbdb;
+}
+.np-chip--patient .np-chip__avatar {
+  background: #d6dbdb;
+  color: #4f4d4d;
+}
+.np-chip--doctor {
+  background: #ffe9df;
+  color: #c23a05;
+  border-color: #ffc4a8;
+}
+.np-chip--doctor .np-chip__avatar {
+  background: #ffc4a8;
+  color: #c23a05;
+}
+
+/* 8. POPUPS (slash + mention) — Tippy renders these into <body> ------------- */
+
+/* neutralize Tippy's default box so our own panel styling shows through */
+.tippy-box[data-theme~='np'] {
+  background-color: transparent;
+  box-shadow: none;
+  color: inherit;
+}
+.tippy-box[data-theme~='np'] .tippy-content {
+  padding: 0;
+}
+.tippy-box[data-theme~='np'] .tippy-arrow {
+  display: none;
+}
+
+.np-popup {
+  font-family: var(--np-font-ui);
+  background: #fff;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-md);
+  padding: 0;
+  box-shadow: var(--np-shadow-pop);
+  max-height: 360px;
+  overflow-y: auto;
+  animation: np-pop-in 150ms ease;
+}
+.np-popup--slash {
+  width: 290px;
+}
+.np-popup--mention {
+  width: 308px;
+}
+.np-popup::-webkit-scrollbar {
+  width: 5px;
+}
+.np-popup::-webkit-scrollbar-thumb {
+  background: var(--np-border);
+  border-radius: var(--np-radius-sm);
+}
+
+/* Popup header bar */
+.np-popup__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--np-border-soft);
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 1;
+}
+.np-popup__header-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--np-radius-xs);
+  background: var(--np-purple-tint-2);
+  color: var(--np-purple);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+.np-popup__header-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--np-text-mute);
+}
+.np-popup__header-hint {
+  margin-left: auto;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--np-text-faint);
+}
+
+/* Items wrapper (pads the content below the sticky header) */
+.np-popup__items {
+  padding: 6px;
+}
+
+/* Group label (section divider inside popup) */
+.np-popup__group-label {
+  padding: 8px 8px 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--np-text-faint);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.np-popup__group-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--np-border-soft);
+}
+.np-popup__group-divider {
+  height: 1px;
+  background: var(--np-border-soft);
+  margin: 4px 6px;
+}
+
+.np-popup__empty {
+  padding: 20px 10px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--np-text-mute);
+}
+
+/* a single command / mention row */
+.np-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease;
+  position: relative;
+}
+.np-item:hover {
+  background: var(--np-purple-tint-2);
+}
+.np-item.is-selected {
+  background: var(--np-purple-tint);
+}
+.np-item.is-selected::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--np-purple);
+}
+
+/* slash command icon square */
+.np-item__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--np-radius-sm);
+  flex-shrink: 0;
+  border: 1px solid transparent;
+}
+.np-item__body {
+  min-width: 0;
+  flex: 1;
+}
+.np-item__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--np-text);
+  line-height: 1.3;
+}
+.np-item__desc {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--np-text-mute);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* per-command icon-square colors (with matching border) */
+.np-ic--medicine  { background: #e7f8ef; color: #0b7a41; border-color: #a8e5c6; }
+.np-ic--diagnosis { background: #ffecee; color: #bf2b2b; border-color: #f4aeae; }
+.np-ic--template  { background: #ffecee; color: #e54b4b; border-color: #f4aeae; }
+.np-ic--vitals    { background: #fff6cc; color: #7a6300; border-color: #ffe780; }
+.np-ic--labtest   { background: #fff6cc; color: #7a6300; border-color: #ffe780; }
+.np-ic--dosage    { background: #ffe9df; color: #c23a05; border-color: #ffc4a8; }
+.np-ic--date      { background: #e7f8ef; color: #0b7a41; border-color: #a8e5c6; }
+.np-ic--heading   { background: #efefed; color: #4f4d4d; border-color: #d6dbdb; }
+.np-ic--list      { background: #efefed; color: #4f4d4d; border-color: #d6dbdb; }
+.np-ic--divider   { background: #efefed; color: #6d7576; border-color: #d6dbdb; }
+
+/* mention popup avatar */
+.np-item__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1.5px solid transparent;
+}
+.np-item__avatar--patient {
+  background: #efefed;
+  color: #4f4d4d;
+  border-color: #d6dbdb;
+}
+.np-item__avatar--doctor {
+  background: #ffe9df;
+  color: #c23a05;
+  border-color: #ffc4a8;
+}
+
+/* status / availability badge pills */
+.np-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: var(--np-radius-pill);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.np-badge--active     { background: #e7f8ef; color: #0b7a41; }
+.np-badge--critical   { background: #ffecee; color: #bf2b2b; }
+.np-badge--admitted   { background: #efefed; color: #4f4d4d; }
+.np-badge--follow_up  { background: #fff6cc; color: #7a6300; }
+.np-badge--discharged { background: #efefed; color: #6d7576; }
+.np-badge--available  { background: #e7f8ef; color: #0b7a41; }
+.np-badge--busy       { background: #ffe9df; color: #c23a05; }
+.np-badge__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* 9. MENTION POPOVER -------------------------------------------------------- */
+.np-popover {
+  font-family: var(--np-font-ui);
+  width: 280px;
+  background: #fff;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-lg);
+  padding: 16px;
+  box-shadow: var(--np-shadow-popover);
+  animation: np-pop-in 150ms ease;
+}
+
+.np-popover__head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+.np-popover__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.np-popover__avatar--patient {
+  background: #efefed;
+  color: #4f4d4d;
+}
+.np-popover__avatar--doctor {
+  background: #ffe9df;
+  color: #c23a05;
+}
+.np-popover__name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--np-text);
+}
+.np-popover__sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--np-text-mute);
+  margin-top: 1px;
+}
+.np-popover__badges {
+  margin-top: 10px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.np-popover__divider {
+  height: 1px;
+  background: var(--np-border-soft);
+  margin: 12px 0;
+}
+.np-popover__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  line-height: 1.7;
+}
+.np-popover__row + .np-popover__row {
+  margin-top: 3px;
+}
+.np-popover__label {
+  font-weight: 400;
+  color: var(--np-text-mute);
+  flex-shrink: 0;
+}
+.np-popover__value {
+  font-weight: 500;
+  color: var(--np-text);
+  text-align: right;
+}
+.np-popover__block {
+  margin-top: 9px;
+}
+.np-popover__block-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--np-text-mute);
+  margin-bottom: 5px;
+}
+.np-popover__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+.np-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--np-radius-pill);
+  font-size: 10.5px;
+  font-weight: 500;
+}
+.np-pill--condition { background: #e7f8ef; color: #0b7a41; }
+.np-pill--allergy   { background: #ffecee; color: #bf2b2b; }
+.np-pill--qual      { background: #efefed; color: #4f4d4d; }
+.np-popover__meds {
+  font-family: var(--np-font-ui);
+  font-weight: 300;
+  font-size: 12px;
+  color: var(--np-text-soft);
+  line-height: 1.7;
+}
+.np-popover__meds li {
+  list-style: none;
+}
+.np-popover__meds-list {
+  margin: 0;
+  padding: 0;
+}
+.np-popover__link {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--np-purple);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+.np-popover__link:hover {
+  text-decoration: underline;
+}
+
+/* 10. VITALS TABLE ---------------------------------------------------------- */
+.doctor-notepad .ProseMirror table.np-vitals-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0;
+  border-radius: var(--np-radius-sm);
+  overflow: hidden;
+  table-layout: fixed;
+}
+.doctor-notepad .ProseMirror table.np-vitals-table th {
+  background: var(--np-purple-tint);
+  color: var(--np-purple-deep);
+  font-family: var(--np-font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1.5px solid var(--np-violet);
+}
+.doctor-notepad .ProseMirror table.np-vitals-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--np-border-soft);
+  color: var(--np-text);
+  font-family: var(--np-font-ui);
+  font-size: 12.5px;
+  vertical-align: top;
+}
+/* the Value column — Figtree medium italic for emphasis */
+.doctor-notepad .ProseMirror table.np-vitals-table td:nth-child(2) {
+  font-family: var(--np-font-serif);
+  font-weight: 500;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--np-text);
+}
+.doctor-notepad .ProseMirror table.np-vitals-table .selectedCell {
+  background: var(--np-purple-tint);
+}
+.doctor-notepad .ProseMirror table.np-vitals-table td:focus,
+.doctor-notepad .ProseMirror table.np-vitals-table th:focus {
+  outline: none;
+}
+
+/* 11. STATUS BAR ------------------------------------------------------------ */
+.np-statusbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
+  background: var(--np-bar-bg);
+  border-top: 1px solid var(--np-border-soft);
+}
+.np-statusbar__count {
+  font-family: var(--np-font-ui);
+  font-weight: 300;
+  font-size: 11px;
+  color: var(--np-text-faint);
+}
+.np-statusbar__draft {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--np-font-ui);
+  font-size: 11px;
+  transition: opacity 250ms ease;
+}
+.np-statusbar__draft.is-saving {
+  font-weight: 400;
+  color: var(--np-violet);
+}
+.np-statusbar__draft.is-saved {
+  font-weight: 500;
+  color: #0b7a41;
+}
+.np-statusbar__draft.is-idle {
+  opacity: 0;
+}
+.np-spinner {
+  animation: np-spin 0.7s linear infinite;
+  transform-origin: center;
+}
+
+/* 12. FOOTER ---------------------------------------------------------------- */
+.np-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px;
+  background: var(--np-bar-bg);
+  border-top: 1px solid var(--np-border-soft);
+}
+.np-btn-cancel {
+  height: 32px;
+  padding: 0 16px;
+  border: 1.5px solid var(--np-purple);
+  border-radius: var(--np-radius-md);
+  background: #fff;
+  font-family: var(--np-font-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  color: var(--np-text);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.np-btn-cancel:hover {
+  background: var(--np-purple-tint-2);
+  border-color: var(--np-purple-deep);
+}
+.np-btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 20px;
+  border: 1.5px solid transparent;
+  border-radius: var(--np-radius-md);
+  background: var(--np-purple);
+  font-family: var(--np-font-ui);
+  font-weight: 700;
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  color: #fff;
+  cursor: pointer;
+  transition: background-color 120ms ease, transform 100ms ease;
+}
+.np-btn-save:hover {
+  background: var(--np-purple-deep);
+  transform: scale(0.99);
+}
+.np-btn-save:active {
+  background: var(--jano-crimson-700);
+  transform: scale(0.97);
+}
+
+/* 13. FLOATING LAYERS — picker, popover, menus ------------------------------ */
+.np-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: transparent;
+}
+.np-floating {
+  position: fixed;
+  z-index: 1600;
+}
+
+/* command picker (second-level slash popup) */
+.np-picker__head {
+  padding: 2px 6px 6px;
+}
+.np-picker__title {
+  font-family: var(--np-font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--np-text-mute);
+}
+.np-picker__input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px;
+  margin-bottom: 4px;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-sm);
+  background: #fff;
+  font-family: var(--np-font-ui);
+  font-size: 12.5px;
+  color: var(--np-text);
+  outline: none;
+  transition: border-color 120ms ease;
+}
+.np-picker__input::placeholder {
+  color: var(--np-text-faint);
+}
+.np-picker__input:focus {
+  border-color: var(--np-violet);
+}
+.np-picker__list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+/* dosage mini-form */
+.np-dosage {
+  width: 264px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+.np-dosage__label {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-family: var(--np-font-ui);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--np-text-mute);
+}
+.np-dosage__label .np-picker__input {
+  margin-bottom: 0;
+}
+.np-dosage__row {
+  display: flex;
+  gap: 8px;
+}
+.np-dosage__row .np-dosage__label {
+  flex: 1;
+}
+.np-dosage__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+/* "more options" — shortcuts menu */
+.np-moremenu {
+  width: 230px;
+  background: #fff;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-md);
+  box-shadow: var(--np-shadow-pop);
+  padding: 8px;
+  font-family: var(--np-font-ui);
+  animation: np-pop-in 150ms ease;
+}
+.np-moremenu__title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--np-text-mute);
+  padding: 3px 6px 7px;
+}
+.np-moremenu__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 6px;
+  font-size: 12px;
+  color: var(--np-text-soft);
+}
+.np-moremenu__key {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--np-text-mute);
+  background: var(--np-bar-bg);
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-xs);
+  padding: 2px 7px;
+}
+
+/* 14. ANIMATIONS ------------------------------------------------------------ */
+@keyframes np-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes np-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes np-fade-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

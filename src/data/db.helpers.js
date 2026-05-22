@@ -1,0 +1,197 @@
+/**
+ * db.helpers.js
+ * -------------------------------------------------------------------------
+ * Query/search helpers for the Doctor's Notepad. Every function reads from
+ * the local db.json fake database — there are NO external API calls.
+ *
+ * db.json is the read-only source of truth. These helpers only READ it.
+ * -------------------------------------------------------------------------
+ */
+import db from './db.json';
+
+/* ------------------------------------------------------------------ */
+/* internal utilities                                                  */
+/* ------------------------------------------------------------------ */
+
+/** Lower-case a value safely (handles null/undefined/numbers). */
+const lc = (value) => (value == null ? '' : String(value).toLowerCase());
+
+/** Case-insensitive "includes" match. */
+const matches = (haystack, query) => lc(haystack).includes(lc(query).trim());
+
+/* ------------------------------------------------------------------ */
+/* normalizers — shape entities into a consistent form for the editor  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Patient → mention object. This is the exact snapshot stored inside a
+ * patient mention chip's node attributes at insertion time.
+ */
+function normalizePatient(p) {
+  return {
+    type: 'patient',
+    id: p.id,
+    name: p.name,
+    mrn: p.mrn,
+    uhid: p.uhid,
+    age: p.age,
+    gender: p.gender,
+    bloodGroup: p.bloodGroup,
+    status: p.status,
+    primaryDoctorId: p.primaryPhysicianId,
+    primaryPhysician: p.primaryPhysician,
+    chronicConditions: p.chronicConditions || [],
+    allergies: p.allergies || [],
+    currentMedications: p.currentMedications || [],
+    lastVisit: p.lastVisit,
+    nextAppointment: p.nextAppointment,
+  };
+}
+
+/**
+ * Doctor → mention object. Snapshot stored inside a doctor mention chip.
+ */
+function normalizeDoctor(d) {
+  return {
+    type: 'doctor',
+    id: d.id,
+    name: d.name,
+    specialization: d.specialization,
+    designation: d.designation,
+    department: d.department,
+    room: d.room,
+    isAvailableNow: !!d.isAvailableNow,
+    availableHours: d.availableHours,
+    qualifications: d.qualifications || [],
+    phone: d.phone,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* @ mentions                                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * searchMentions(query)
+ * Combined list of matching patients and doctors for the @ mention popup.
+ *  - Max 8 results total, patients listed first.
+ *  - If the query starts with "dr", only doctors are returned.
+ *  - Matching is case-insensitive "includes" on name (+ MRN/UHID for
+ *    patients, specialization for doctors).
+ *
+ * @param {string} query
+ * @returns {Array} normalized patient/doctor objects (see normalizers above)
+ */
+export function searchMentions(query) {
+  const q = (query || '').trim();
+  const doctorsOnly = lc(q).startsWith('dr');
+
+  const doctorResults = db.doctors
+    .filter(
+      (d) => !q || matches(d.name, q) || matches(d.specialization, q),
+    )
+    .map(normalizeDoctor);
+
+  if (doctorsOnly) {
+    return doctorResults.slice(0, 8);
+  }
+
+  const patientResults = db.patients
+    .filter(
+      (p) =>
+        !q ||
+        matches(p.name, q) ||
+        matches(p.mrn, q) ||
+        matches(p.uhid, q),
+    )
+    .map(normalizePatient);
+
+  // Patients first, then doctors, capped at 8 total.
+  return [...patientResults, ...doctorResults].slice(0, 8);
+}
+
+/* ------------------------------------------------------------------ */
+/* slash-command data sources                                          */
+/* ------------------------------------------------------------------ */
+
+/**
+ * searchMedicines(query) — match medicines by name or category.
+ * @returns {Array} raw medicine records: { id, name, category, dosageForms, commonDoses }
+ */
+export function searchMedicines(query) {
+  const q = (query || '').trim();
+  if (!q) return db.medicines.slice();
+  return db.medicines.filter(
+    (m) => matches(m.name, q) || matches(m.category, q),
+  );
+}
+
+/**
+ * searchDiagnoses(query) — match diagnoses by name or ICD code.
+ * @returns {Array} raw diagnosis records: { id, name, icd, category }
+ */
+export function searchDiagnoses(query) {
+  const q = (query || '').trim();
+  if (!q) return db.diagnoses.slice();
+  return db.diagnoses.filter(
+    (d) => matches(d.name, q) || matches(d.icd, q),
+  );
+}
+
+/**
+ * searchLabTests(query) — match lab tests by name or category.
+ * @returns {Array} raw lab test records: { id, name, category, turnaround }
+ */
+export function searchLabTests(query) {
+  const q = (query || '').trim();
+  if (!q) return db.labTests.slice();
+  return db.labTests.filter(
+    (t) => matches(t.name, q) || matches(t.category, q),
+  );
+}
+
+/**
+ * getAllTemplates() — every notepad template.
+ * Normalized to { id, title, description, content } for the /template list.
+ * `content` is plain text; newlines become separate paragraphs on insert.
+ * @returns {Array}
+ */
+export function getAllTemplates() {
+  return db.notepadTemplates.map((t) => ({
+    id: t.id,
+    title: t.name,
+    description: t.category,
+    content: t.content,
+  }));
+}
+
+/* ------------------------------------------------------------------ */
+/* single-record lookups                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * getPatientById(id) — single normalized patient, or null.
+ */
+export function getPatientById(id) {
+  const p = db.patients.find((x) => x.id === id);
+  return p ? normalizePatient(p) : null;
+}
+
+/**
+ * getDoctorById(id) — single normalized doctor, or null.
+ */
+export function getDoctorById(id) {
+  const d = db.doctors.find((x) => x.id === id);
+  return d ? normalizeDoctor(d) : null;
+}
+
+/* Default export: handy for quick console testing (e.g. `helpers.searchMentions('ram')`). */
+export default {
+  searchMentions,
+  searchMedicines,
+  searchDiagnoses,
+  searchLabTests,
+  getAllTemplates,
+  getPatientById,
+  getDoctorById,
+};

@@ -1,0 +1,1349 @@
+{
+  "_meta": {
+    "description": "Fake database for Janopad notepad app. All field names are EXACT matches from the kritter-web-app frontend codebase. Do not rename any keys.",
+    "sources": {
+      "patients": "src/features/reno-patient-profile/types/index.ts (GeneralDetailsData, OpsPatientResponse) + src/features/core/types/patient.ts (PatientSummary)",
+      "dialysisDetails": "src/features/reno-patient-profile/types/index.ts (DialysisDetailsData, CaseHistoryResponse) + src/features/reno-patient-profile/constants/dialysisDetails.ts",
+      "medicalHistory": "src/features/reno-patient-profile/types/index.ts (MedicalHistoryData, MedicalCondition, Allergy, Vaccination)",
+      "doctors": "src/features/auth/docs/test-auth-payloads-guide.md (users[].teams[].role) + OpsPatientResponse.primary_consultant",
+      "appointments": "src/features/reno-patient-scheduling/api/weeklyAppointment.ts (WeeklyAppointmentResponse, Schedule, TimeSlot, Station)",
+      "procedures": "src/features/reno-home/types/dlsSession.ts (DlsSession, ProcedureListItem) + src/features/reno-procedure/api/sessionData.ts (ProcedureApiResponse)",
+      "vitals": "src/features/reno-procedure/api/sessionData.ts (Measure, AddTreatmentReadingRequest) + docs/VITALS_TABULAR_DISPLAY.md",
+      "medications": "src/features/reno-procedure/api/sessionData.ts (MedicationEntry, AddOrUpdateMedicationRequest)",
+      "complications": "src/features/reno-procedure/api/sessionData.ts (ComplicationEntry)",
+      "notes": "src/features/reno-procedure/api/sessionData.ts (NoteEntry)",
+      "organizations": "src/features/auth/docs/test-auth-payloads-guide.md (users[].teams[])",
+      "serologyTags": "src/features/reno-patient-profile/types/index.ts (SerologyTag)",
+      "sessionSummaries": "src/features/reno-patient-profile/types/index.ts (SessionSummary, RenoSessionResponse)"
+    },
+    "enums": {
+      "sessionType": ["mhd", "sled", "crrt", "scuf"],
+      "patientType_api": ["outp", "inp"],
+      "patientType_ui": ["outpatient", "inpatient"],
+      "sessionStage": ["PRE_DLS", "MONITORING", "POST_DLS"],
+      "sessionState": ["active", "paused", "completed"],
+      "sessionEventLabel": ["check_in", "in_progress", "paused", "resumed", "post", "complete"],
+      "gender": ["male", "female", "other"],
+      "bloodGroup": ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"],
+      "vascularAccessCode": ["AVF", "AVG", "TEMP_CATHETER", "PERM_CATHETER", "FEMO_CATHETER", "JAGULAR_CATHETER"],
+      "dialyzerUse": ["Single", "Multi"],
+      "heparinType": ["Free", "Rigid", "Regular (Systemic)", "Hourly Heparin", "Only Bolus"],
+      "avfNeedleSize": ["15G", "16G", "17G"],
+      "teamRole": ["doctor", "pre_tech", "pre_tech_asst", "post_tech", "post_tech_asst"],
+      "userRole": ["doctor", "nurse", "technician", "admin"],
+      "phoneNumberBelongsTo": ["self", "caregiver"],
+      "phoneType_api": ["self", "longtime_caregiver", "temporary_caregiver", "parent_guardian"],
+      "prescriptionParamCodes": ["QBLD", "QDLST", "DLSTTEMP", "BICON", "DLZRUSE", "HEPTYPE", "AVFNSZ"],
+      "vitalCodes_measures": ["BP", "TEMP", "PULSE", "SPO2", "GRBS", "KTV", "APRX_WT", "HEP_BOLUS", "HEP_MAINTENANCE", "VASCULAR_PRESSURE", "PUMP_SPEED", "TMP"],
+      "vitalCodes_params": ["PREWT", "POSTWT", "UFGOAL", "UFACHVD", "DRYWT"],
+      "timeSlotCodes": ["WK_T1", "WK_T2", "WK_T3", "WKND_T1", "WKND_T2"],
+      "deptCode": ["NEPHRO"],
+      "speciality": ["nephrology"],
+      "salutation": ["Mr", "Mrs", "Ms", "Dr"],
+      "patientStatus": ["ACTIVE", "CRITICAL", "ADMITTED", "FOLLOW_UP", "DISCHARGED"],
+      "labTestCategory": ["Haematology", "Biochemistry", "Renal", "Endocrine", "Serology"]
+    }
+  },
+
+  "organizations": [
+    {
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "org_name": "Jano Dialysis Center - Hyderabad",
+      "dept_code": "NEPHRO",
+      "team_id": "67e4f83f3cba8e001393fe99",
+      "team_name": "Nephrology Team A",
+      "speciality": "nephrology"
+    },
+    {
+      "org_id": "67e4f83f3cba8e001393fe49",
+      "org_name": "Jano Dialysis Center - Bengaluru",
+      "dept_code": "NEPHRO",
+      "team_id": "67e4f83f3cba8e001393fe100",
+      "team_name": "Nephrology Team B",
+      "speciality": "nephrology"
+    }
+  ],
+
+  "doctors": [
+    {
+      "id": "doc001",
+      "name": "Dr. Arjun Mehta",
+      "email": "arjun.mehta@janohealth.com",
+      "phone": "+919876543201",
+      "specialization": "Nephrology",
+      "designation": "Senior Nephrologist",
+      "department": "Nephrology & Dialysis",
+      "room": "Room 204",
+      "isAvailableNow": true,
+      "availableHours": "9:00 AM – 5:00 PM",
+      "qualifications": ["MBBS", "MD (General Medicine)", "DM (Nephrology)"],
+      "teams": [
+        {
+          "org_id": "67e4f83f3cba8e001393fe48",
+          "org_name": "Jano Dialysis Center - Hyderabad",
+          "dept_code": "NEPHRO",
+          "team_id": "67e4f83f3cba8e001393fe99",
+          "team_name": "Nephrology Team A",
+          "role": "doctor",
+          "designation": "Senior Nephrologist",
+          "key_member": true,
+          "team_phone": "+919876543201"
+        }
+      ],
+      "organizations": []
+    },
+    {
+      "id": "doc002",
+      "name": "Dr. Priya Nair",
+      "email": "priya.nair@janohealth.com",
+      "phone": "+919876543202",
+      "specialization": "Nephrology",
+      "designation": "Nephrologist",
+      "department": "Nephrology & Dialysis",
+      "room": "Room 208",
+      "isAvailableNow": false,
+      "availableHours": "11:00 AM – 7:00 PM",
+      "qualifications": ["MBBS", "MD (Nephrology)"],
+      "teams": [
+        {
+          "org_id": "67e4f83f3cba8e001393fe48",
+          "org_name": "Jano Dialysis Center - Hyderabad",
+          "dept_code": "NEPHRO",
+          "team_id": "67e4f83f3cba8e001393fe99",
+          "team_name": "Nephrology Team A",
+          "role": "doctor",
+          "designation": "Nephrologist",
+          "key_member": false,
+          "team_phone": "+919876543202"
+        }
+      ],
+      "organizations": []
+    },
+    {
+      "id": "doc003",
+      "name": "Dr. Suresh Babu",
+      "email": "suresh.babu@janohealth.com",
+      "phone": "+919876543203",
+      "specialization": "Nephrology",
+      "designation": "Consultant Nephrologist",
+      "department": "Nephrology & Dialysis",
+      "room": "Room 112",
+      "isAvailableNow": true,
+      "availableHours": "8:00 AM – 2:00 PM",
+      "qualifications": ["MBBS", "MD (Internal Medicine)", "DNB (Nephrology)"],
+      "teams": [
+        {
+          "org_id": "67e4f83f3cba8e001393fe49",
+          "org_name": "Jano Dialysis Center - Bengaluru",
+          "dept_code": "NEPHRO",
+          "team_id": "67e4f83f3cba8e001393fe100",
+          "team_name": "Nephrology Team B",
+          "role": "doctor",
+          "designation": "Consultant Nephrologist",
+          "key_member": true,
+          "team_phone": "+919876543203"
+        }
+      ],
+      "organizations": []
+    }
+  ],
+
+  "teamMembers": [
+    {
+      "id": "usr001",
+      "name": "Dr. Arjun Mehta",
+      "role": "doctor",
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "team_id": "67e4f83f3cba8e001393fe99"
+    },
+    {
+      "id": "usr002",
+      "name": "Kavitha Reddy",
+      "role": "pre_tech",
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "team_id": "67e4f83f3cba8e001393fe99"
+    },
+    {
+      "id": "usr003",
+      "name": "Rajan Kumar",
+      "role": "pre_tech_asst",
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "team_id": "67e4f83f3cba8e001393fe99"
+    },
+    {
+      "id": "usr004",
+      "name": "Meena Sharma",
+      "role": "post_tech",
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "team_id": "67e4f83f3cba8e001393fe99"
+    },
+    {
+      "id": "usr005",
+      "name": "Dr. Priya Nair",
+      "role": "doctor",
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "team_id": "67e4f83f3cba8e001393fe99"
+    },
+    {
+      "id": "usr006",
+      "name": "Anil Verma",
+      "role": "post_tech_asst",
+      "org_id": "67e4f83f3cba8e001393fe48",
+      "team_id": "67e4f83f3cba8e001393fe99"
+    }
+  ],
+
+  "stations": [
+    { "id": "67e6672a442220e6e1f6ce3f", "code": "BED_1", "label": "1" },
+    { "id": "67e6672a442220e6e1f6ce40", "code": "BED_2", "label": "2" },
+    { "id": "67e6672a442220e6e1f6ce41", "code": "BED_3", "label": "3" },
+    { "id": "67e6672a442220e6e1f6ce42", "code": "BED_4", "label": "4" },
+    { "id": "67e6672a442220e6e1f6ce43", "code": "BED_5", "label": "5" },
+    { "id": "67e6672a442220e6e1f6ce44", "code": "BED_6", "label": "6" },
+    { "id": "67e6672a442220e6e1f6ce45", "code": "BED_7", "label": "7" },
+    { "id": "67e6672a442220e6e1f6ce46", "code": "BED_8", "label": "8" }
+  ],
+
+  "patients": [
+    {
+      "id": "pat001",
+      "mrn": "MRN-2024-0001",
+      "status": "ACTIVE",
+      "chronicConditions": ["Type 2 Diabetes Mellitus", "Hypertension", "Anaemia of CKD"],
+      "allergies": ["Penicillin", "Contrast dye"],
+      "currentMedications": ["Erythropoietin 4000 IU SC", "Amlodipine 5mg OD", "Calcium Carbonate 500mg BD"],
+      "lastVisit": "2026-05-17",
+      "nextAppointment": "2026-05-22",
+      "salutation": "Mr",
+      "firstName": "Ramesh",
+      "lastName": "Patel",
+      "name": "Ramesh Patel",
+      "dob": "1968-03-15",
+      "age": "57y 2m 5d",
+      "gender": "male",
+      "bloodGroup": "B+",
+      "phoneNumber": "+919876543210",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID001",
+      "address": "12, Lakshmi Nagar, Hyderabad",
+      "primaryPhysician": "Dr. Arjun Mehta",
+      "primaryPhysicianId": "doc001",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Sunita Patel",
+        "relationship": "spouse",
+        "phoneNumber": "+919876543211"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat002",
+      "mrn": "MRN-2024-0002",
+      "status": "FOLLOW_UP",
+      "chronicConditions": ["Type 2 Diabetes Mellitus", "Hypertension", "Coronary Artery Disease"],
+      "allergies": ["Aspirin"],
+      "currentMedications": ["Furosemide 40mg IV", "Metoprolol 25mg BD", "Sevelamer 800mg TDS"],
+      "lastVisit": "2026-05-16",
+      "nextAppointment": "2026-05-21",
+      "salutation": "Mrs",
+      "firstName": "Lakshmi",
+      "lastName": "Krishnan",
+      "name": "Lakshmi Krishnan",
+      "dob": "1955-07-22",
+      "age": "69y 10m 0d",
+      "gender": "female",
+      "bloodGroup": "O+",
+      "phoneNumber": "+919876543212",
+      "phoneNumberBelongsTo": "caregiver",
+      "caregiverName": "Ravi Krishnan",
+      "caregiverRelationship": "caregiver",
+      "uhid": "UHID002",
+      "address": "45, Gandhi Road, Hyderabad",
+      "primaryPhysician": "Dr. Priya Nair",
+      "primaryPhysicianId": "doc002",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Ravi Krishnan",
+        "relationship": "son",
+        "phoneNumber": "+919876543213"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat003",
+      "mrn": "MRN-2024-0003",
+      "status": "ACTIVE",
+      "chronicConditions": ["Hypertension", "Dyslipidaemia"],
+      "allergies": [],
+      "currentMedications": ["Telmisartan 40mg OD", "Calcitriol 0.25mcg OD"],
+      "lastVisit": "2026-05-19",
+      "nextAppointment": "2026-05-21",
+      "salutation": "Mr",
+      "firstName": "Sudarshan",
+      "lastName": "Rao",
+      "name": "Sudarshan Rao",
+      "dob": "1975-11-08",
+      "age": "49y 6m 12d",
+      "gender": "male",
+      "bloodGroup": "A+",
+      "phoneNumber": "+919876543214",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID003",
+      "address": "78, Banjara Hills, Hyderabad",
+      "primaryPhysician": "Dr. Arjun Mehta",
+      "primaryPhysicianId": "doc001",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Meena Rao",
+        "relationship": "spouse",
+        "phoneNumber": "+919876543215"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat004",
+      "mrn": "MRN-2024-0004",
+      "status": "ADMITTED",
+      "chronicConditions": ["ESRD - IgA Nephropathy", "Hypertension"],
+      "allergies": ["Sulpha drugs"],
+      "currentMedications": ["Erythropoietin 6000 IU SC", "Amlodipine 10mg OD"],
+      "lastVisit": "2026-05-18",
+      "nextAppointment": "2026-05-20",
+      "salutation": "Ms",
+      "firstName": "Fatima",
+      "lastName": "Shaikh",
+      "name": "Fatima Shaikh",
+      "dob": "1962-09-30",
+      "age": "62y 7m 20d",
+      "gender": "female",
+      "bloodGroup": "AB+",
+      "phoneNumber": "+919876543216",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID004",
+      "address": "23, Jubilee Hills, Hyderabad",
+      "primaryPhysician": "Dr. Priya Nair",
+      "primaryPhysicianId": "doc002",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Ahmed Shaikh",
+        "relationship": "spouse",
+        "phoneNumber": "+919876543217"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat005",
+      "mrn": "MRN-2024-0005",
+      "status": "CRITICAL",
+      "chronicConditions": ["Acute Kidney Injury", "Type 2 Diabetes Mellitus", "Hypertension"],
+      "allergies": ["Iodine"],
+      "currentMedications": ["Furosemide 80mg IV", "Insulin (sliding scale)", "Pantoprazole 40mg IV"],
+      "lastVisit": "2026-05-19",
+      "nextAppointment": "2026-05-20",
+      "salutation": "Mr",
+      "firstName": "Venkat",
+      "lastName": "Reddy",
+      "name": "Venkat Reddy",
+      "dob": "1958-01-12",
+      "age": "67y 4m 8d",
+      "gender": "male",
+      "bloodGroup": "O-",
+      "phoneNumber": "+919876543218",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID005",
+      "address": "56, Madhapur, Hyderabad",
+      "primaryPhysician": "Dr. Arjun Mehta",
+      "primaryPhysicianId": "doc001",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Radha Reddy",
+        "relationship": "daughter",
+        "phoneNumber": "+919876543219"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat006",
+      "mrn": "MRN-2024-0006",
+      "status": "ACTIVE",
+      "chronicConditions": ["CKD - Lupus Nephritis"],
+      "allergies": ["Penicillin"],
+      "currentMedications": ["Prednisolone 10mg OD", "Calcium Carbonate 500mg BD"],
+      "lastVisit": "2026-05-15",
+      "nextAppointment": "2026-05-22",
+      "salutation": "Mrs",
+      "firstName": "Kavitha",
+      "lastName": "Iyer",
+      "name": "Kavitha Iyer",
+      "dob": "1970-05-25",
+      "age": "54y 11m 25d",
+      "gender": "female",
+      "bloodGroup": "B-",
+      "phoneNumber": "+919876543220",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID006",
+      "address": "34, Secunderabad, Hyderabad",
+      "primaryPhysician": "Dr. Priya Nair",
+      "primaryPhysicianId": "doc002",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Suresh Iyer",
+        "relationship": "spouse",
+        "phoneNumber": "+919876543221"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat007",
+      "mrn": "MRN-2024-0007",
+      "status": "FOLLOW_UP",
+      "chronicConditions": ["ESRD - Diabetic Nephropathy", "Hyperparathyroidism"],
+      "allergies": [],
+      "currentMedications": ["Iron Sucrose 200mg IV", "Calcitriol 0.5mcg OD", "Sevelamer 400mg TDS"],
+      "lastVisit": "2026-05-14",
+      "nextAppointment": "2026-05-23",
+      "salutation": "Mr",
+      "firstName": "Mohammed",
+      "lastName": "Ali",
+      "name": "Mohammed Ali",
+      "dob": "1980-12-03",
+      "age": "44y 5m 17d",
+      "gender": "male",
+      "bloodGroup": "A-",
+      "phoneNumber": "+919876543222",
+      "phoneNumberBelongsTo": "caregiver",
+      "caregiverName": "Zainab Ali",
+      "caregiverRelationship": "parent_guardian",
+      "uhid": "UHID007",
+      "address": "89, Tolichowki, Hyderabad",
+      "primaryPhysician": "Dr. Suresh Babu",
+      "primaryPhysicianId": "doc003",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Zainab Ali",
+        "relationship": "spouse",
+        "phoneNumber": "+919876543223"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat008",
+      "mrn": "MRN-2024-0008",
+      "status": "DISCHARGED",
+      "chronicConditions": ["CKD - Hypertensive Nephropathy"],
+      "allergies": ["Aspirin"],
+      "currentMedications": ["Telmisartan 80mg OD"],
+      "lastVisit": "2026-05-10",
+      "nextAppointment": "2026-05-24",
+      "salutation": "Mr",
+      "firstName": "Arun",
+      "lastName": "Singh",
+      "name": "Arun Singh",
+      "dob": "1965-08-18",
+      "age": "59y 9m 2d",
+      "gender": "male",
+      "bloodGroup": "AB-",
+      "phoneNumber": "+919876543224",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID008",
+      "address": "11, Kukatpally, Hyderabad",
+      "primaryPhysician": "Dr. Arjun Mehta",
+      "primaryPhysicianId": "doc001",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Anita Singh",
+        "relationship": "spouse",
+        "phoneNumber": "+919876543225"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat009",
+      "mrn": "MRN-2024-0009",
+      "status": "ADMITTED",
+      "chronicConditions": ["ESRD - Diabetic Nephropathy", "Anaemia of CKD", "Coronary Artery Disease"],
+      "allergies": ["Contrast dye"],
+      "currentMedications": ["Erythropoietin 10000 IU SC", "Metoprolol 50mg BD"],
+      "lastVisit": "2026-05-18",
+      "nextAppointment": "2026-05-20",
+      "salutation": "Mrs",
+      "firstName": "Usha",
+      "lastName": "Menon",
+      "name": "Usha Menon",
+      "dob": "1952-04-10",
+      "age": "73y 1m 10d",
+      "gender": "female",
+      "bloodGroup": "O+",
+      "phoneNumber": "+919876543226",
+      "phoneNumberBelongsTo": "caregiver",
+      "caregiverName": "Deepak Menon",
+      "caregiverRelationship": "caregiver",
+      "uhid": "UHID009",
+      "address": "67, Ameerpet, Hyderabad",
+      "primaryPhysician": "Dr. Priya Nair",
+      "primaryPhysicianId": "doc002",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Deepak Menon",
+        "relationship": "son",
+        "phoneNumber": "+919876543227"
+      },
+      "avatarUrl": null
+    },
+    {
+      "id": "pat010",
+      "mrn": "MRN-2024-0010",
+      "status": "ACTIVE",
+      "chronicConditions": ["Chronic Kidney Disease Stage 5"],
+      "allergies": [],
+      "currentMedications": ["Normal Saline 250ml IV"],
+      "lastVisit": "2026-05-12",
+      "nextAppointment": "2026-05-21",
+      "salutation": "Mr",
+      "firstName": "Sheryl",
+      "lastName": "Tester",
+      "name": "Sheryl The Tester",
+      "dob": "2006-05-20",
+      "age": "19y 0m 0d",
+      "gender": "female",
+      "bloodGroup": "B+",
+      "phoneNumber": "+919876543210",
+      "phoneNumberBelongsTo": "self",
+      "uhid": "UHID1234",
+      "address": "Test Address, Hyderabad",
+      "primaryPhysician": "Dr. Arjun Mehta",
+      "primaryPhysicianId": "doc001",
+      "primaryPhysicianSpecialty": "nephrology",
+      "emergencyContact": {
+        "name": "Test Guardian",
+        "relationship": "parent_guardian",
+        "phoneNumber": "+919876543228"
+      },
+      "avatarUrl": null
+    }
+  ],
+
+  "dialysisDetails": [
+    {
+      "patientId": "pat001",
+      "vascularAccess": {
+        "value": "AVF (ArteroVenous Fistula)",
+        "code": "AVF",
+        "created": "15-03-2021"
+      },
+      "dryWeight": {
+        "code": "DRYWT",
+        "name": "Dry Weight",
+        "value": "65.5",
+        "units": { "unit": "kg" }
+      },
+      "dialysisRuntime": { "hours": 4, "minutes": 0 },
+      "serologyTags": [
+        { "name": "HBV Negative", "since": null },
+        { "name": "HIV Negative", "since": null },
+        { "name": "HCV Positive", "since": { "value": "3", "unit": "year" } }
+      ],
+      "diagnosis": "Chronic Kidney Disease Stage 5",
+      "prescriptionParams": [
+        { "code": "QBLD", "name": "Quantum of blood", "value": "350", "units": { "unit": "ml/hr", "refRange": { "min": 300, "max": 500 } } },
+        { "code": "QDLST", "name": "Quantum of dialysate", "value": "600", "units": { "unit": "ml/hr", "refRange": { "min": 500, "max": 800 } } },
+        { "code": "DLSTTEMP", "name": "Dialysate temperature", "value": "36.5", "units": { "unit": "˚c", "refRange": { "min": 35, "max": 37.5 } } },
+        { "code": "BICON", "name": "Dialysate Bicarbonate (DBIC)", "value": "35", "units": { "unit": "mmol/l", "refRange": { "min": 32, "max": 40 } } },
+        { "code": "DLZRUSE", "name": "Dialyzer Use", "value": "Single", "units": { "unit": "" } },
+        { "code": "HEPTYPE", "name": "Heparin Type", "value": "Regular (Systemic)", "units": { "unit": "" } },
+        { "code": "AVFNSZ", "name": "AVF Needle Size", "value": "16G", "units": { "unit": "" } }
+      ]
+    },
+    {
+      "patientId": "pat002",
+      "vascularAccess": {
+        "value": "Perm Catheter",
+        "code": "PERM_CATHETER",
+        "created": "22-07-2022"
+      },
+      "dryWeight": {
+        "code": "DRYWT",
+        "name": "Dry Weight",
+        "value": "58.0",
+        "units": { "unit": "kg" }
+      },
+      "dialysisRuntime": { "hours": 3, "minutes": 30 },
+      "serologyTags": [
+        { "name": "HBV Positive", "since": { "value": "5", "unit": "year" } },
+        { "name": "HIV Negative", "since": null }
+      ],
+      "diagnosis": "ESRD - Diabetic Nephropathy",
+      "prescriptionParams": [
+        { "code": "QBLD", "name": "Quantum of blood", "value": "300", "units": { "unit": "ml/hr", "refRange": { "min": 300, "max": 500 } } },
+        { "code": "QDLST", "name": "Quantum of dialysate", "value": "500", "units": { "unit": "ml/hr", "refRange": { "min": 500, "max": 800 } } },
+        { "code": "DLSTTEMP", "name": "Dialysate temperature", "value": "36.0", "units": { "unit": "˚c", "refRange": { "min": 35, "max": 37.5 } } },
+        { "code": "BICON", "name": "Dialysate Bicarbonate (DBIC)", "value": "34", "units": { "unit": "mmol/l", "refRange": { "min": 32, "max": 40 } } },
+        { "code": "DLZRUSE", "name": "Dialyzer Use", "value": "Multi", "units": { "unit": "" } },
+        { "code": "HEPTYPE", "name": "Heparin Type", "value": "Only Bolus", "units": { "unit": "" } },
+        { "code": "AVFNSZ", "name": "AVF Needle Size", "value": "17G", "units": { "unit": "" } }
+      ]
+    },
+    {
+      "patientId": "pat003",
+      "vascularAccess": {
+        "value": "AVF (ArteroVenous Fistula)",
+        "code": "AVF",
+        "created": "08-11-2020"
+      },
+      "dryWeight": {
+        "code": "DRYWT",
+        "name": "Dry Weight",
+        "value": "72.0",
+        "units": { "unit": "kg" }
+      },
+      "dialysisRuntime": { "hours": 4, "minutes": 30 },
+      "serologyTags": [
+        { "name": "HBV Negative", "since": null },
+        { "name": "HIV Negative", "since": null },
+        { "name": "HCV Negative", "since": null }
+      ],
+      "diagnosis": "CKD - Hypertensive Nephropathy",
+      "prescriptionParams": [
+        { "code": "QBLD", "name": "Quantum of blood", "value": "400", "units": { "unit": "ml/hr", "refRange": { "min": 300, "max": 500 } } },
+        { "code": "QDLST", "name": "Quantum of dialysate", "value": "700", "units": { "unit": "ml/hr", "refRange": { "min": 500, "max": 800 } } },
+        { "code": "DLSTTEMP", "name": "Dialysate temperature", "value": "37.0", "units": { "unit": "˚c", "refRange": { "min": 35, "max": 37.5 } } },
+        { "code": "BICON", "name": "Dialysate Bicarbonate (DBIC)", "value": "36", "units": { "unit": "mmol/l", "refRange": { "min": 32, "max": 40 } } },
+        { "code": "DLZRUSE", "name": "Dialyzer Use", "value": "Single", "units": { "unit": "" } },
+        { "code": "HEPTYPE", "name": "Heparin Type", "value": "Hourly Heparin", "units": { "unit": "" } },
+        { "code": "AVFNSZ", "name": "AVF Needle Size", "value": "15G", "units": { "unit": "" } }
+      ]
+    }
+  ],
+
+  "medicalHistory": [
+    {
+      "patientId": "pat001",
+      "conditions": [
+        { "name": "Type 2 Diabetes Mellitus", "since": { "value": "2010-06-15T00:00:00.000Z", "unit": "Date" } },
+        { "name": "Hypertension", "since": { "value": "12", "unit": "Year" } },
+        { "name": "Anaemia of CKD", "since": { "value": "3", "unit": "Year" } }
+      ],
+      "allergies": [
+        { "name": "Penicillin", "since": { "value": "1995-01-01T00:00:00.000Z", "unit": "Date" } },
+        { "name": "Contrast dye", "since": null }
+      ],
+      "vaccinations": [
+        {
+          "name": "Hepatitis B",
+          "injectionName": "Genvac",
+          "dosage": "20mcg",
+          "dose": "Dose 1",
+          "administeredDate": "2022-01-10"
+        },
+        {
+          "name": "Hepatitis B",
+          "injectionName": "Genvac",
+          "dosage": "20mcg",
+          "dose": "Dose 2",
+          "administeredDate": "2022-02-10"
+        }
+      ]
+    },
+    {
+      "patientId": "pat002",
+      "conditions": [
+        { "name": "Type 2 Diabetes Mellitus", "since": { "value": "15", "unit": "Year" } },
+        { "name": "Hypertension", "since": { "value": "20", "unit": "Year" } },
+        { "name": "Coronary Artery Disease", "since": { "value": "5", "unit": "Year" } }
+      ],
+      "allergies": [
+        { "name": "Aspirin", "since": null }
+      ],
+      "vaccinations": [
+        {
+          "name": "Hepatitis B",
+          "injectionName": "Engerix-B",
+          "dosage": "20mcg",
+          "dose": "Booster",
+          "administeredDate": "2023-03-15"
+        }
+      ]
+    },
+    {
+      "patientId": "pat003",
+      "conditions": [
+        { "name": "Hypertension", "since": { "value": "8", "unit": "Year" } },
+        { "name": "Dyslipidaemia", "since": { "value": "6", "unit": "Year" } }
+      ],
+      "allergies": [],
+      "vaccinations": []
+    }
+  ],
+
+  "appointments": [
+    {
+      "scheduleId": "680880c53f6356999d8ce814",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 1,
+      "dayName": "Monday",
+      "timeSlot": {
+        "code": "WK_T1",
+        "start": 7,
+        "end": 11,
+        "startLabel": "7 am",
+        "endLabel": "11 am",
+        "order": 1,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce3f", "code": "BED_1", "label": "1" },
+      "patientId": "pat001"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce815",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 3,
+      "dayName": "Wednesday",
+      "timeSlot": {
+        "code": "WK_T1",
+        "start": 7,
+        "end": 11,
+        "startLabel": "7 am",
+        "endLabel": "11 am",
+        "order": 1,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce3f", "code": "BED_1", "label": "1" },
+      "patientId": "pat001"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce816",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 5,
+      "dayName": "Friday",
+      "timeSlot": {
+        "code": "WK_T1",
+        "start": 7,
+        "end": 11,
+        "startLabel": "7 am",
+        "endLabel": "11 am",
+        "order": 1,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce3f", "code": "BED_1", "label": "1" },
+      "patientId": "pat001"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce817",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 2,
+      "dayName": "Tuesday",
+      "timeSlot": {
+        "code": "WK_T2",
+        "start": 11,
+        "end": 15,
+        "startLabel": "11 am",
+        "endLabel": "3 pm",
+        "order": 2,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce40", "code": "BED_2", "label": "2" },
+      "patientId": "pat002"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce818",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 4,
+      "dayName": "Thursday",
+      "timeSlot": {
+        "code": "WK_T2",
+        "start": 11,
+        "end": 15,
+        "startLabel": "11 am",
+        "endLabel": "3 pm",
+        "order": 2,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce40", "code": "BED_2", "label": "2" },
+      "patientId": "pat002"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce819",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 6,
+      "dayName": "Saturday",
+      "timeSlot": {
+        "code": "WK_T2",
+        "start": 11,
+        "end": 15,
+        "startLabel": "11 am",
+        "endLabel": "3 pm",
+        "order": 2,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce40", "code": "BED_2", "label": "2" },
+      "patientId": "pat002"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce820",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 1,
+      "dayName": "Monday",
+      "timeSlot": {
+        "code": "WK_T3",
+        "start": 15,
+        "end": 19,
+        "startLabel": "3 pm",
+        "endLabel": "7 pm",
+        "order": 3,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce41", "code": "BED_3", "label": "3" },
+      "patientId": "pat003"
+    },
+    {
+      "scheduleId": "680880c53f6356999d8ce821",
+      "orgId": "67e4f83f3cba8e001393fe48",
+      "dayOfWeek": 0,
+      "dayName": "Sunday",
+      "timeSlot": {
+        "code": "WKND_T1",
+        "start": 9,
+        "end": 13,
+        "startLabel": "9 am",
+        "endLabel": "1 pm",
+        "order": 1,
+        "comment": "start end are time 24Hr hours",
+        "remindBeforeHours": 24
+      },
+      "station": { "id": "67e6672a442220e6e1f6ce42", "code": "BED_4", "label": "4" },
+      "patientId": "pat004"
+    }
+  ],
+
+  "procedures": [
+    {
+      "procId": "proc001",
+      "_id": "proc001",
+      "sessionNumber": 142,
+      "templateId": "def/nephro/dls/checkin/variant1",
+      "patient": {
+        "id": "pat001",
+        "name": "Ramesh Patel",
+        "gender": "male",
+        "age": "57y 2m 5d",
+        "dob": "15-03-1968",
+        "salutation": "Mr",
+        "uhid": { "label": "UHID", "value": "UHID001" }
+      },
+      "org": {
+        "orgId": "67e4f83f3cba8e001393fe48",
+        "deptCode": "NEPHRO",
+        "teamId": "67e4f83f3cba8e001393fe99"
+      },
+      "data": {
+        "formName": "create-procedure",
+        "speciality": "nephrology",
+        "type": "dialysis",
+        "scheduleType": "scheduled",
+        "scheduleId": "680880c53f6356999d8ce814",
+        "patientType": "outp",
+        "sessionType": "mhd"
+      },
+      "status": {
+        "stage": "MONITORING",
+        "state": "active",
+        "metadata": {
+          "reportedOn": "2026-05-20T07:15:00.000Z",
+          "stations": [{ "code": "BED_1", "label": "1" }]
+        },
+        "timer": {
+          "status": "running",
+          "since": "2026-05-20T07:30:00.000Z",
+          "saved": 0
+        },
+        "audit": {
+          "createdBy": "usr001",
+          "createdOn": "2026-05-20T07:00:00.000Z",
+          "creatorName": "Dr. Arjun Mehta",
+          "updatedBy": "usr002",
+          "updatedOn": "2026-05-20T07:30:00.000Z",
+          "updaterName": "Kavitha Reddy"
+        }
+      },
+      "events": [
+        {
+          "stage": "PRE_DLS",
+          "state": "active",
+          "metadata": { "reportedOn": "2026-05-20T07:00:00.000Z" },
+          "audit": {
+            "createdBy": "usr001",
+            "createdOn": "2026-05-20T07:00:00.000Z",
+            "creatorName": "Dr. Arjun Mehta",
+            "updatedBy": "usr001",
+            "updatedOn": "2026-05-20T07:00:00.000Z",
+            "updaterName": "Dr. Arjun Mehta"
+          }
+        },
+        {
+          "stage": "MONITORING",
+          "state": "active",
+          "metadata": {
+            "reportedOn": "2026-05-20T07:30:00.000Z",
+            "station": { "id": "67e6672a442220e6e1f6ce3f", "code": "BED_1", "label": "1" }
+          },
+          "audit": {
+            "createdBy": "usr002",
+            "createdOn": "2026-05-20T07:30:00.000Z",
+            "creatorName": "Kavitha Reddy",
+            "updatedBy": "usr002",
+            "updatedOn": "2026-05-20T07:30:00.000Z",
+            "updaterName": "Kavitha Reddy"
+          }
+        }
+      ],
+      "audit": {
+        "createdBy": "usr001",
+        "createdOn": "2026-05-20T07:00:00.000Z",
+        "creatorName": "Dr. Arjun Mehta",
+        "updatedBy": "usr002",
+        "updatedOn": "2026-05-20T07:30:00.000Z",
+        "updaterName": "Kavitha Reddy"
+      }
+    },
+    {
+      "procId": "proc002",
+      "_id": "proc002",
+      "sessionNumber": 89,
+      "templateId": "def/nephro/dls/checkin/variant1",
+      "patient": {
+        "id": "pat002",
+        "name": "Lakshmi Krishnan",
+        "gender": "female",
+        "age": "69y 10m 0d",
+        "dob": "22-07-1955",
+        "salutation": "Mrs",
+        "uhid": { "label": "UHID", "value": "UHID002" }
+      },
+      "org": {
+        "orgId": "67e4f83f3cba8e001393fe48",
+        "deptCode": "NEPHRO",
+        "teamId": "67e4f83f3cba8e001393fe99"
+      },
+      "data": {
+        "formName": "create-procedure",
+        "speciality": "nephrology",
+        "type": "dialysis",
+        "scheduleType": "scheduled",
+        "scheduleId": "680880c53f6356999d8ce817",
+        "patientType": "outp",
+        "sessionType": "mhd"
+      },
+      "status": {
+        "stage": "PRE_DLS",
+        "state": "active",
+        "metadata": {
+          "reportedOn": "2026-05-20T11:00:00.000Z",
+          "stations": [{ "code": "BED_2", "label": "2" }]
+        },
+        "timer": {
+          "status": null,
+          "since": "2026-05-20T11:00:00.000Z",
+          "saved": 0
+        },
+        "audit": {
+          "createdBy": "usr005",
+          "createdOn": "2026-05-20T11:00:00.000Z",
+          "creatorName": "Dr. Priya Nair",
+          "updatedBy": "usr005",
+          "updatedOn": "2026-05-20T11:00:00.000Z",
+          "updaterName": "Dr. Priya Nair"
+        }
+      },
+      "events": [
+        {
+          "stage": "PRE_DLS",
+          "state": "active",
+          "metadata": { "reportedOn": "2026-05-20T11:00:00.000Z" },
+          "audit": {
+            "createdBy": "usr005",
+            "createdOn": "2026-05-20T11:00:00.000Z",
+            "creatorName": "Dr. Priya Nair",
+            "updatedBy": "usr005",
+            "updatedOn": "2026-05-20T11:00:00.000Z",
+            "updaterName": "Dr. Priya Nair"
+          }
+        }
+      ],
+      "audit": {
+        "createdBy": "usr005",
+        "createdOn": "2026-05-20T11:00:00.000Z",
+        "creatorName": "Dr. Priya Nair",
+        "updatedBy": "usr005",
+        "updatedOn": "2026-05-20T11:00:00.000Z",
+        "updaterName": "Dr. Priya Nair"
+      }
+    },
+    {
+      "procId": "proc003",
+      "_id": "proc003",
+      "sessionNumber": 211,
+      "templateId": "def/nephro/dls/checkin/variant1",
+      "patient": {
+        "id": "pat003",
+        "name": "Sudarshan Rao",
+        "gender": "male",
+        "age": "49y 6m 12d",
+        "dob": "08-11-1975",
+        "salutation": "Mr",
+        "uhid": { "label": "UHID", "value": "UHID003" }
+      },
+      "org": {
+        "orgId": "67e4f83f3cba8e001393fe48",
+        "deptCode": "NEPHRO",
+        "teamId": "67e4f83f3cba8e001393fe99"
+      },
+      "data": {
+        "formName": "create-procedure",
+        "speciality": "nephrology",
+        "type": "dialysis",
+        "scheduleType": "scheduled",
+        "scheduleId": "680880c53f6356999d8ce820",
+        "patientType": "outp",
+        "sessionType": "crrt"
+      },
+      "status": {
+        "stage": "POST_DLS",
+        "state": "active",
+        "metadata": {
+          "reportedOn": "2026-05-20T19:00:00.000Z",
+          "sessionRuntime": { "hours": 4, "minutes": 0 },
+          "stations": [{ "code": "BED_3", "label": "3" }]
+        },
+        "timer": {
+          "status": "stop",
+          "since": "2026-05-20T19:00:00.000Z",
+          "saved": 14400
+        },
+        "audit": {
+          "createdBy": "usr001",
+          "createdOn": "2026-05-20T15:00:00.000Z",
+          "creatorName": "Dr. Arjun Mehta",
+          "updatedBy": "usr004",
+          "updatedOn": "2026-05-20T19:00:00.000Z",
+          "updaterName": "Meena Sharma"
+        }
+      },
+      "events": [
+        {
+          "stage": "PRE_DLS",
+          "state": "active",
+          "metadata": { "reportedOn": "2026-05-20T15:00:00.000Z" },
+          "audit": {
+            "createdBy": "usr001",
+            "createdOn": "2026-05-20T15:00:00.000Z",
+            "creatorName": "Dr. Arjun Mehta",
+            "updatedBy": "usr001",
+            "updatedOn": "2026-05-20T15:00:00.000Z",
+            "updaterName": "Dr. Arjun Mehta"
+          }
+        },
+        {
+          "stage": "MONITORING",
+          "state": "active",
+          "metadata": { "reportedOn": "2026-05-20T15:30:00.000Z" },
+          "audit": {
+            "createdBy": "usr002",
+            "createdOn": "2026-05-20T15:30:00.000Z",
+            "creatorName": "Kavitha Reddy",
+            "updatedBy": "usr002",
+            "updatedOn": "2026-05-20T15:30:00.000Z",
+            "updaterName": "Kavitha Reddy"
+          }
+        },
+        {
+          "stage": "POST_DLS",
+          "state": "active",
+          "metadata": {
+            "reportedOn": "2026-05-20T19:00:00.000Z",
+            "sessionRuntime": { "hours": 4, "minutes": 0 }
+          },
+          "audit": {
+            "createdBy": "usr004",
+            "createdOn": "2026-05-20T19:00:00.000Z",
+            "creatorName": "Meena Sharma",
+            "updatedBy": "usr004",
+            "updatedOn": "2026-05-20T19:00:00.000Z",
+            "updaterName": "Meena Sharma"
+          }
+        }
+      ],
+      "audit": {
+        "createdBy": "usr001",
+        "createdOn": "2026-05-20T15:00:00.000Z",
+        "creatorName": "Dr. Arjun Mehta",
+        "updatedBy": "usr004",
+        "updatedOn": "2026-05-20T19:00:00.000Z",
+        "updaterName": "Meena Sharma"
+      }
+    }
+  ],
+
+  "vitals": [
+    {
+      "procId": "proc001",
+      "patientId": "pat001",
+      "stage": "PRE_DLS",
+      "formName": "pre-dialysis-form",
+      "measures": [
+        { "vital_code": "APRX_WT", "name": "Pre Weight", "value": "67.2", "units": { "unit": "Kg" } },
+        { "vital_code": "BP", "name": "Blood Pressure", "value": "130/85", "units": { "unit": "mmHg" } },
+        { "vital_code": "TEMP", "name": "Temperature", "value": "98.6", "units": { "unit": "°F" } },
+        { "vital_code": "PULSE", "name": "Pulse", "value": "78", "units": { "unit": "BPM" } },
+        { "vital_code": "SPO2", "name": "SpO2", "value": "97", "units": { "unit": "%" } },
+        { "vital_code": "GRBS", "name": "GRBS", "value": "112", "units": { "unit": "mg/dL" } },
+        { "vital_code": "HEP_BOLUS", "name": "Heparin Bolus", "value": "2000", "units": { "unit": "IU" } }
+      ],
+      "params": [
+        { "code": "PREWT", "name": "Pre HD Weight", "value": "67.2", "units": { "unit": "Kg" } },
+        { "code": "UFGOAL", "name": "UF Goal", "value": "2200", "units": { "unit": "ml" } }
+      ]
+    },
+    {
+      "procId": "proc001",
+      "patientId": "pat001",
+      "stage": "MONITORING",
+      "formName": "monitoring-form",
+      "readings": [
+        {
+          "entry_id": "entry001",
+          "recorded_at": "2026-05-20T08:00:00.000Z",
+          "measures": [
+            { "vital_code": "BP", "name": "Blood Pressure", "value": "128/82", "units": { "unit": "mmHg" } },
+            { "vital_code": "TEMP", "name": "Temperature", "value": "98.4", "units": { "unit": "°F" } },
+            { "vital_code": "PULSE", "name": "Pulse", "value": "76", "units": { "unit": "BPM" } },
+            { "vital_code": "SPO2", "name": "SpO2", "value": "98", "units": { "unit": "%" } },
+            { "vital_code": "PUMP_SPEED", "name": "Pump Speed", "value": "350", "units": { "unit": "ml/min" } }
+          ]
+        },
+        {
+          "entry_id": "entry002",
+          "recorded_at": "2026-05-20T09:00:00.000Z",
+          "measures": [
+            { "vital_code": "BP", "name": "Blood Pressure", "value": "125/80", "units": { "unit": "mmHg" } },
+            { "vital_code": "TEMP", "name": "Temperature", "value": "98.2", "units": { "unit": "°F" } },
+            { "vital_code": "PULSE", "name": "Pulse", "value": "74", "units": { "unit": "BPM" } },
+            { "vital_code": "SPO2", "name": "SpO2", "value": "98", "units": { "unit": "%" } },
+            { "vital_code": "PUMP_SPEED", "name": "Pump Speed", "value": "350", "units": { "unit": "ml/min" } }
+          ]
+        }
+      ]
+    }
+  ],
+
+  "medications": [
+    {
+      "entry_id": "med001",
+      "procId": "proc001",
+      "patientId": "pat001",
+      "stage": "MONITORING",
+      "formName": "medications",
+      "recorded_at": "2026-05-20T08:15:00.000Z",
+      "value": "Erythropoietin 4000 IU SC",
+      "audit": {
+        "created_on": "2026-05-20T08:15:00.000Z",
+        "created_by": "usr002",
+        "updated_on": "2026-05-20T08:15:00.000Z",
+        "updated_by": "usr002",
+        "creator_name": "Kavitha Reddy",
+        "updater_name": "Kavitha Reddy"
+      }
+    },
+    {
+      "entry_id": "med002",
+      "procId": "proc001",
+      "patientId": "pat001",
+      "stage": "MONITORING",
+      "formName": "medications",
+      "recorded_at": "2026-05-20T09:30:00.000Z",
+      "value": "Iron Sucrose 200mg IV",
+      "audit": {
+        "created_on": "2026-05-20T09:30:00.000Z",
+        "created_by": "usr002",
+        "updated_on": "2026-05-20T09:30:00.000Z",
+        "updated_by": "usr002",
+        "creator_name": "Kavitha Reddy",
+        "updater_name": "Kavitha Reddy"
+      }
+    },
+    {
+      "entry_id": "med003",
+      "procId": "proc002",
+      "patientId": "pat002",
+      "stage": "PRE_DLS",
+      "formName": "medications",
+      "recorded_at": "2026-05-20T11:10:00.000Z",
+      "value": "Furosemide 40mg IV",
+      "audit": {
+        "created_on": "2026-05-20T11:10:00.000Z",
+        "created_by": "usr005",
+        "updated_on": "2026-05-20T11:10:00.000Z",
+        "updated_by": "usr005",
+        "creator_name": "Dr. Priya Nair",
+        "updater_name": "Dr. Priya Nair"
+      }
+    }
+  ],
+
+  "complications": [
+    {
+      "entry_id": "comp001",
+      "procId": "proc001",
+      "patientId": "pat001",
+      "formName": "complications",
+      "recorded_at": "2026-05-20T08:45:00.000Z",
+      "value": "Hypotension",
+      "audit": {
+        "created_on": "2026-05-20T08:45:00.000Z",
+        "created_by": "usr002",
+        "updated_on": "2026-05-20T08:45:00.000Z",
+        "updated_by": "usr002",
+        "creator_name": "Kavitha Reddy",
+        "updater_name": "Kavitha Reddy"
+      }
+    }
+  ],
+
+  "notes": [
+    {
+      "entry_id": "note001",
+      "procId": "proc001",
+      "patientId": "pat001",
+      "formName": "notes",
+      "content": "Patient complained of mild dizziness during session. BP monitored closely. No further intervention needed.",
+      "session_state": "in_progress",
+      "audit": {
+        "created_on": "2026-05-20T08:50:00.000Z",
+        "created_by": "usr002",
+        "updated_on": "2026-05-20T08:50:00.000Z",
+        "updated_by": "usr002",
+        "creator_name": "Kavitha Reddy",
+        "updater_name": "Kavitha Reddy"
+      }
+    },
+    {
+      "entry_id": "note002",
+      "procId": "proc001",
+      "patientId": "pat001",
+      "formName": "notes",
+      "content": "Patient tolerated session well overall. Hypotension episode resolved with saline flush.",
+      "session_state": "in_progress",
+      "audit": {
+        "created_on": "2026-05-20T10:00:00.000Z",
+        "created_by": "usr001",
+        "updated_on": "2026-05-20T10:00:00.000Z",
+        "updated_by": "usr001",
+        "creator_name": "Dr. Arjun Mehta",
+        "updater_name": "Dr. Arjun Mehta"
+      }
+    }
+  ],
+
+  "sessionSummaries": [
+    {
+      "patientId": "pat001",
+      "sessions": [
+        { "id": "proc_hist_001", "sessionNumber": 141, "date": "2026-05-17T00:00:00.000Z" },
+        { "id": "proc_hist_002", "sessionNumber": 140, "date": "2026-05-14T00:00:00.000Z" },
+        { "id": "proc_hist_003", "sessionNumber": 139, "date": "2026-05-10T00:00:00.000Z" }
+      ]
+    },
+    {
+      "patientId": "pat002",
+      "sessions": [
+        { "id": "proc_hist_004", "sessionNumber": 88, "date": "2026-05-16T00:00:00.000Z" },
+        { "id": "proc_hist_005", "sessionNumber": 87, "date": "2026-05-13T00:00:00.000Z" }
+      ]
+    },
+    {
+      "patientId": "pat003",
+      "sessions": [
+        { "id": "proc_hist_006", "sessionNumber": 210, "date": "2026-05-19T00:00:00.000Z" },
+        { "id": "proc_hist_007", "sessionNumber": 209, "date": "2026-05-17T00:00:00.000Z" },
+        { "id": "proc_hist_008", "sessionNumber": 208, "date": "2026-05-15T00:00:00.000Z" }
+      ]
+    }
+  ],
+
+  "medicines": [
+    { "id": "m001", "name": "Erythropoietin (EPO)", "category": "Anaemia", "dosageForms": ["SC", "IV"], "commonDoses": ["4000 IU", "6000 IU", "10000 IU"] },
+    { "id": "m002", "name": "Iron Sucrose", "category": "Anaemia", "dosageForms": ["IV"], "commonDoses": ["100mg", "200mg"] },
+    { "id": "m003", "name": "Ferric Carboxymaltose", "category": "Anaemia", "dosageForms": ["IV"], "commonDoses": ["500mg", "1000mg"] },
+    { "id": "m004", "name": "Furosemide", "category": "Diuretic", "dosageForms": ["IV", "Oral"], "commonDoses": ["20mg", "40mg", "80mg"] },
+    { "id": "m005", "name": "Amlodipine", "category": "Antihypertensive", "dosageForms": ["Oral"], "commonDoses": ["5mg", "10mg"] },
+    { "id": "m006", "name": "Metoprolol", "category": "Antihypertensive", "dosageForms": ["Oral", "IV"], "commonDoses": ["25mg", "50mg", "100mg"] },
+    { "id": "m007", "name": "Telmisartan", "category": "Antihypertensive", "dosageForms": ["Oral"], "commonDoses": ["40mg", "80mg"] },
+    { "id": "m008", "name": "Heparin", "category": "Anticoagulant", "dosageForms": ["IV"], "commonDoses": ["1000 IU", "2000 IU", "5000 IU"] },
+    { "id": "m009", "name": "Enoxaparin", "category": "Anticoagulant", "dosageForms": ["SC"], "commonDoses": ["20mg", "40mg", "60mg"] },
+    { "id": "m010", "name": "Calcium Carbonate", "category": "Phosphate Binder", "dosageForms": ["Oral"], "commonDoses": ["500mg", "1000mg"] },
+    { "id": "m011", "name": "Sevelamer", "category": "Phosphate Binder", "dosageForms": ["Oral"], "commonDoses": ["400mg", "800mg"] },
+    { "id": "m012", "name": "Calcitriol", "category": "Vitamin D", "dosageForms": ["Oral", "IV"], "commonDoses": ["0.25mcg", "0.5mcg"] },
+    { "id": "m013", "name": "Ondansetron", "category": "Antiemetic", "dosageForms": ["IV", "Oral"], "commonDoses": ["4mg", "8mg"] },
+    { "id": "m014", "name": "Pantoprazole", "category": "Proton Pump Inhibitor", "dosageForms": ["IV", "Oral"], "commonDoses": ["40mg"] },
+    { "id": "m015", "name": "Normal Saline", "category": "Fluid", "dosageForms": ["IV"], "commonDoses": ["100ml", "250ml", "500ml"] }
+  ],
+
+  "diagnoses": [
+    { "id": "d001", "name": "Chronic Kidney Disease Stage 5", "icd": "N18.5", "category": "Renal" },
+    { "id": "d002", "name": "ESRD - Diabetic Nephropathy", "icd": "N08", "category": "Renal" },
+    { "id": "d003", "name": "CKD - Hypertensive Nephropathy", "icd": "I12.9", "category": "Renal" },
+    { "id": "d004", "name": "ESRD - IgA Nephropathy", "icd": "N02.8", "category": "Renal" },
+    { "id": "d005", "name": "CKD - Lupus Nephritis", "icd": "M32.14", "category": "Renal" },
+    { "id": "d006", "name": "Acute Kidney Injury", "icd": "N17.9", "category": "Renal" },
+    { "id": "d007", "name": "Type 2 Diabetes Mellitus", "icd": "E11", "category": "Metabolic" },
+    { "id": "d008", "name": "Hypertension", "icd": "I10", "category": "Cardiovascular" },
+    { "id": "d009", "name": "Anaemia of CKD", "icd": "D63.1", "category": "Haematology" },
+    { "id": "d010", "name": "Hyperparathyroidism", "icd": "E21.3", "category": "Endocrine" }
+  ],
+
+  "notepadTemplates": [
+    {
+      "id": "tmpl001",
+      "name": "Pre-Dialysis Assessment",
+      "category": "assessment",
+      "content": "Patient presented for scheduled dialysis session.\n\nVitals on arrival:\n- BP: \n- Weight: \n- GRBS: \n\nComplaints: \n\nPlan: Proceed with scheduled MHD session."
+    },
+    {
+      "id": "tmpl002",
+      "name": "Post-Dialysis Note",
+      "category": "summary",
+      "content": "Session completed.\n\nPost-dialysis vitals:\n- BP: \n- Weight: \n- SPO2: \n\nUF Achieved: \nComplications: None / \n\nPlan: Patient discharged in stable condition."
+    },
+    {
+      "id": "tmpl003",
+      "name": "Complication Note",
+      "category": "complication",
+      "content": "Complication noted during session:\n\nTime: \nEvent: \nIntervention: \nOutcome: "
+    },
+    {
+      "id": "tmpl004",
+      "name": "Medication Administration Note",
+      "category": "medication",
+      "content": "Medication administered:\n\nDrug: \nDose: \nRoute: \nTime: \nGiven by: "
+    }
+  ],
+
+  "labTests": [
+    { "id": "l001", "name": "Complete Blood Count (CBC)", "category": "Haematology", "turnaround": "Same day" },
+    { "id": "l002", "name": "Serum Creatinine", "category": "Biochemistry", "turnaround": "4 hours" },
+    { "id": "l003", "name": "Blood Urea Nitrogen (BUN)", "category": "Biochemistry", "turnaround": "4 hours" },
+    { "id": "l004", "name": "Serum Electrolytes (Na/K/Cl)", "category": "Biochemistry", "turnaround": "4 hours" },
+    { "id": "l005", "name": "Serum Calcium & Phosphate", "category": "Biochemistry", "turnaround": "6 hours" },
+    { "id": "l006", "name": "Parathyroid Hormone (iPTH)", "category": "Endocrine", "turnaround": "48 hours" },
+    { "id": "l007", "name": "HbA1c", "category": "Biochemistry", "turnaround": "24 hours" },
+    { "id": "l008", "name": "Lipid Profile", "category": "Biochemistry", "turnaround": "12 hours" },
+    { "id": "l009", "name": "Kt/V Dialysis Adequacy", "category": "Renal", "turnaround": "Same day" },
+    { "id": "l010", "name": "Viral Markers (HBV/HCV/HIV)", "category": "Serology", "turnaround": "24 hours" }
+  ]
+}
