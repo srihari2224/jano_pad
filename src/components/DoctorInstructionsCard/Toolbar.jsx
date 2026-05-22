@@ -1,7 +1,9 @@
 /**
  * Toolbar.jsx — the formatting toolbar above the editor.
  * Every control reflects live active state via editor.isActive().
+ * The "AI" button opens a dropdown of AI actions (polish, expand, summarize…).
  */
+import { useRef, useState } from 'react';
 import {
   IconUndo,
   IconRedo,
@@ -11,6 +13,8 @@ import {
   IconAlignCenter,
   IconAlignRight,
   IconClearFormat,
+  IconSparkles,
+  IconChevron,
 } from './icons';
 
 /** A single toolbar button — keeps editor focus on mousedown. */
@@ -29,7 +33,10 @@ function TbBtn({ active, disabled, title, onClick, children }) {
   );
 }
 
-export default function Toolbar({ editor }) {
+export default function Toolbar({ editor, aiActions, onAiAction, aiBusy }) {
+  const [aiMenu, setAiMenu] = useState(null); // { top, left } | null
+  const aiBtnRef = useRef(null);
+
   if (!editor) return null;
 
   const headingValue = editor.isActive('heading', { level: 1 })
@@ -48,6 +55,23 @@ export default function Toolbar({ editor }) {
 
   const textColor = editor.getAttributes('textStyle').color || '#1a1a1a';
   const highlightColor = editor.getAttributes('highlight').color || '#fde68a';
+
+  const hasAi = onAiAction && aiActions && aiActions.length > 0;
+
+  /* AI dropdown — rendered fixed-position so it escapes the card's overflow. */
+  const toggleAiMenu = () => {
+    if (aiMenu) {
+      setAiMenu(null);
+      return;
+    }
+    const r = aiBtnRef.current?.getBoundingClientRect();
+    if (r) {
+      setAiMenu({
+        top: r.bottom + 5,
+        left: Math.max(8, Math.min(r.left, window.innerWidth - 272)),
+      });
+    }
+  };
 
   return (
     <div className="np-toolbar">
@@ -211,6 +235,58 @@ export default function Toolbar({ editor }) {
           <IconClearFormat size={15} />
         </TbBtn>
       </div>
+
+      {hasAi && (
+        <>
+          <span className="tb-sep" />
+          {/* AI actions */}
+          <div className="tb-group">
+            <button
+              type="button"
+              ref={aiBtnRef}
+              className={`tb-ai-btn ${aiMenu ? 'is-open' : ''}`}
+              disabled={aiBusy}
+              title="AI actions"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={toggleAiMenu}
+            >
+              <IconSparkles size={14} />
+              AI
+              <IconChevron size={11} className="tb-ai-btn__caret" />
+            </button>
+          </div>
+        </>
+      )}
+
+      {aiMenu && (
+        <>
+          <div className="np-overlay" onMouseDown={() => setAiMenu(null)} />
+          <div
+            className="tb-ai-menu"
+            style={{ top: aiMenu.top, left: aiMenu.left }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="tb-ai-menu__head">
+              <IconSparkles size={12} /> AI actions
+            </div>
+            {aiActions.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                className="tb-ai-menu__row"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => {
+                  setAiMenu(null);
+                  onAiAction(a.id);
+                }}
+              >
+                <span className="tb-ai-menu__label">{a.label}</span>
+                <span className="tb-ai-menu__desc">{a.description}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

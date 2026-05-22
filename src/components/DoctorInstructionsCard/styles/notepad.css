@@ -180,7 +180,31 @@
 .np-header__right {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
+}
+
+/* header "Templates" dropdown trigger */
+.np-templates-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-sm);
+  background: #fff;
+  color: var(--np-text-soft);
+  font-family: var(--np-font-ui);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease,
+    color 120ms ease;
+}
+.np-templates-btn:hover {
+  background: var(--np-purple-tint-2);
+  border-color: var(--np-violet);
+  color: var(--np-purple);
 }
 
 .np-icon-btn {
@@ -747,6 +771,21 @@
   white-space: nowrap;
 }
 
+/* dose tag baked into a medicine row in the "/" menu */
+.np-item__dose {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 1px 7px;
+  border-radius: var(--np-radius-pill);
+  background: #e7f8ef;
+  color: #0b7a41;
+  border: 1px solid #a8e5c6;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
 /* per-command icon-square colors (with matching border) */
 .np-ic--medicine  { background: #e7f8ef; color: #0b7a41; border-color: #a8e5c6; }
 .np-ic--diagnosis { background: #ffecee; color: #bf2b2b; border-color: #f4aeae; }
@@ -1205,6 +1244,207 @@
   padding: 2px 7px;
 }
 
+/* template dropdown — opened from the header "Templates" button */
+.np-template-menu {
+  width: 252px;
+  background: #fff;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-md);
+  box-shadow: var(--np-shadow-pop);
+  padding: 8px;
+  font-family: var(--np-font-ui);
+  animation: np-pop-in 150ms ease;
+}
+.np-template-menu__title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--np-text-mute);
+  padding: 3px 6px 7px;
+}
+.np-template-menu__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+.np-template-menu__row:hover {
+  background: var(--np-purple-tint-2);
+}
+.np-template-menu__name {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--np-text);
+}
+.np-template-menu__desc {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--np-text-mute);
+  text-transform: capitalize;
+}
+
+/* AI toolbar button — a brand-gradient pill that opens the AI menu */
+.tb-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 11px;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: linear-gradient(135deg, #e54b4b 0%, #ff4f04 100%);
+  color: #fff;
+  font-family: var(--np-font-ui);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(229, 75, 75, 0.35);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+.tb-ai-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(229, 75, 75, 0.45);
+  filter: brightness(1.06);
+}
+.tb-ai-btn:active {
+  transform: translateY(0);
+}
+.tb-ai-btn.is-open {
+  filter: brightness(0.94);
+}
+.tb-ai-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.tb-ai-btn__caret {
+  opacity: 0.85;
+}
+
+/* AI actions dropdown — fixed-position so it escapes the card's overflow */
+.tb-ai-menu {
+  position: fixed;
+  z-index: 1700;
+  width: 264px;
+  background: #fff;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-md);
+  box-shadow: var(--np-shadow-pop);
+  padding: 6px;
+  font-family: var(--np-font-ui);
+  animation: np-ai-pop-in 120ms ease;
+}
+.tb-ai-menu__head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 8px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--np-purple);
+}
+.tb-ai-menu__row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: var(--np-radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 100ms ease;
+}
+.tb-ai-menu__row:hover {
+  background: var(--np-purple-tint-2);
+}
+.tb-ai-menu__label {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--np-text);
+}
+.tb-ai-menu__desc {
+  font-size: 11px;
+  color: var(--np-text-mute);
+}
+
+/* AI action preview popup */
+.np-ai-popup {
+  position: fixed;
+  top: 16%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1600;
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  background: #fff;
+  border: 1px solid var(--np-border);
+  border-radius: var(--np-radius-md);
+  box-shadow: var(--np-shadow-pop);
+  padding: 14px;
+  font-family: var(--np-font-ui);
+  animation: np-ai-pop-in 120ms ease;
+}
+.np-ai-popup__title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--np-purple);
+  margin-bottom: 10px;
+}
+.np-ai-popup__text {
+  max-height: 320px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--np-text);
+  background: var(--np-bar-bg);
+  border: 1px solid var(--np-border-soft);
+  border-radius: var(--np-radius-sm);
+  padding: 10px 12px;
+}
+.np-ai-popup__loading,
+.np-ai-popup__error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 4px;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--np-text-soft);
+}
+.np-ai-popup__error {
+  color: var(--jano-crimson-700);
+  font-weight: 500;
+}
+.np-ai-popup__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
 /* 14. ANIMATIONS ------------------------------------------------------------ */
 @keyframes np-pop-in {
   from {
@@ -1224,4 +1464,8 @@
 @keyframes np-fade-out {
   from { opacity: 1; }
   to { opacity: 0; }
+}
+@keyframes np-ai-pop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

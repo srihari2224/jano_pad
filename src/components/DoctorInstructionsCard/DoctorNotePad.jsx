@@ -3,10 +3,11 @@
  * -------------------------------------------------------------------------
  * The Doctor's Notepad — a fully featured TipTap rich-text editor.
  *
- * Features: formatting toolbar, 10 slash commands (/), @ mentions of
- * patients & doctors, medicine/diagnosis/lab-test chips, an editable vitals
- * table, click-to-open mention popovers, autosave drafts, word count.
- * The note is stored ONLY as TipTap JSON.
+ * The "/" menu is a single unified step: typing "/erythro 6000" searches
+ * medicines (dose baked into each row), diagnoses and lab tests directly —
+ * one Enter inserts the chip, with no second popup. Quick actions (vitals,
+ * date, heading…) live in the same menu. Note templates are applied from
+ * the header dropdown.
  * -------------------------------------------------------------------------
  */
 import { useEffect, useRef, useState } from 'react';
@@ -30,12 +31,17 @@ import { LabTestNode } from './nodes/LabTestNode';
 import { SlashCommands } from './extensions/SlashCommands';
 import { buildMentionExtension } from './extensions/MentionChip';
 import { makeSuggestionRender } from './extensions/suggestionRender';
-import { searchMentions } from '../../data/db.helpers';
+import {
+  searchMentions,
+  searchMedicineDoses,
+  searchDiagnoses,
+  searchLabTests,
+  getAllTemplates,
+} from '../../data/db.helpers';
 
 import Toolbar from './Toolbar';
 import SlashCommandList from './SlashCommandList';
 import MentionList from './MentionList';
-import CommandPicker from './CommandPicker';
 import MentionPopover from './MentionPopover';
 import {
   IconPencil,
@@ -46,12 +52,15 @@ import {
   IconCheck,
   IconSpinner,
   IconKeyboard,
+  IconFile,
+  IconSparkles,
 } from './icons';
 import { formatIndianDate } from './utils';
+import { runAiAction } from './aiActions';
 import './styles/notepad.css';
 
 const PLACEHOLDER_TEXT =
-  'Start typing, or press / for commands, @ to mention a patient or doctor...';
+  'Start typing, or press / to insert, @ to mention a patient or doctor...';
 
 /* HTML for the /vitals editable table. */
 const VITALS_TABLE_HTML = `
@@ -67,13 +76,8 @@ const VITALS_TABLE_HTML = `
 </tbody>
 </table>`;
 
-/* The 10 slash commands. */
-const SLASH_COMMANDS = [
-  { id: 'medicine', title: 'Medicine', description: 'Insert a medicine as a chip', iconKey: 'medicine', picker: 'medicine' },
-  { id: 'diagnosis', title: 'Diagnosis', description: 'Insert a diagnosis as a chip', iconKey: 'diagnosis', picker: 'diagnosis' },
-  { id: 'labtest', title: 'Lab Test', description: 'Insert a lab test as a chip', iconKey: 'labtest', picker: 'labtest' },
-  { id: 'template', title: 'Template', description: 'Apply a saved note template', iconKey: 'template', picker: 'template' },
-  { id: 'dosage', title: 'Dosage', description: 'Build a medication instruction', iconKey: 'dosage', picker: 'dosage' },
+/* Quick actions — "/" items that run immediately, no search needed. */
+const QUICK_ACTIONS = [
   { id: 'vitals', title: 'Vitals Table', description: 'Insert an editable vitals table', iconKey: 'vitals', action: 'vitals' },
   { id: 'date', title: 'Date', description: "Insert today's date", iconKey: 'date', action: 'date' },
   { id: 'heading', title: 'Heading', description: 'Make this line a heading', iconKey: 'heading', action: 'heading' },
@@ -81,27 +85,107 @@ const SLASH_COMMANDS = [
   { id: 'divider', title: 'Divider', description: 'Insert a horizontal line', iconKey: 'divider', action: 'divider' },
 ];
 
-/** Build the filtered slash-command list; each gets an onSelect closure. */
-function buildSlashCommands(query, openPicker) {
-  const q = (query || '').toLowerCase().trim();
-  return SLASH_COMMANDS.filter(
-    (c) => !q || c.title.toLowerCase().includes(q) || c.id.includes(q),
-  ).map((c) => ({
-    ...c,
-    onSelect: ({ editor, range }) => {
-      if (c.picker) {
-        editor.chain().focus().deleteRange(range).run();
-        openPicker(c.picker, editor);
-        return;
-      }
-      const chain = editor.chain().focus().deleteRange(range);
-      if (c.action === 'vitals') chain.insertContent(VITALS_TABLE_HTML + '<p></p>').run();
-      else if (c.action === 'date') chain.insertContent(formatIndianDate()).run();
-      else if (c.action === 'heading') chain.setHeading({ level: 2 }).run();
-      else if (c.action === 'list') chain.toggleBulletList().run();
-      else if (c.action === 'divider') chain.setHorizontalRule().run();
-    },
-  }));
+/* Note templates — applied from the header dropdown, not the "/" menu. */
+const TEMPLATES = getAllTemplates();
+
+/* AI actions — shown in the toolbar "AI" dropdown.
+ * mode 'replace' swaps the selection/note for the result;
+ * mode 'append' adds the result to the end of the note under a heading. */
+const AI_ACTIONS = [
+  {
+    id: 'polish',
+    label: 'Polish & fix grammar',
+    description: 'Correct spelling, grammar and clarity',
+    mode: 'replace',
+  },
+  {
+    id: 'expand',
+    label: 'Expand & enrich',
+    description: 'Turn shorthand into full clinical prose',
+    mode: 'replace',
+  },
+  {
+    id: 'summarize',
+    label: 'Summarize note',
+    description: 'Add a concise clinical summary',
+    mode: 'append',
+    heading: 'Summary',
+  },
+  {
+    id: 'explain',
+    label: 'Explain medical terms',
+    description: 'Add brief notes on drugs & conditions',
+    mode: 'append',
+    heading: 'Medical Terms',
+  },
+];
+
+/* Optional type-filter keywords for the "/" menu: "/med epo", "/dx ckd". */
+const FILTER_KEYWORDS = {
+  medicine: 'medicine', medicines: 'medicine', med: 'medicine', meds: 'medicine', rx: 'medicine',
+  diagnosis: 'diagnosis', diagnoses: 'diagnosis', diag: 'diagnosis', dx: 'diagnosis',
+  lab: 'labtest', labs: 'labtest', labtest: 'labtest', test: 'labtest', tests: 'labtest',
+};
+
+/** Split a "/" query into an optional type filter and the search term. */
+function parseSlashQuery(raw) {
+  const q = (raw || '').replace(/\s+/g, ' ').replace(/^\s+/, '');
+  const space = q.indexOf(' ');
+  const head = (space > 0 ? q.slice(0, space) : q).toLowerCase();
+  if (FILTER_KEYWORDS[head]) {
+    return {
+      filter: FILTER_KEYWORDS[head],
+      term: space > 0 ? q.slice(space + 1).trim() : '',
+    };
+  }
+  return { filter: null, term: q.trim() };
+}
+
+/* --- recently-used medicines (per patient, localStorage) ----------- */
+const RECENT_MAX = 6;
+const recentKey = (pid) => `recent_medicines_${pid}`;
+
+function getRecentMedicines(pid) {
+  try {
+    const list = JSON.parse(localStorage.getItem(recentKey(pid)) || '[]');
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+
+function rememberMedicine(pid, med) {
+  try {
+    const sig = (m) => `${m.medId}|${m.dose}`;
+    const next = [
+      med,
+      ...getRecentMedicines(pid).filter((m) => sig(m) !== sig(med)),
+    ].slice(0, RECENT_MAX);
+    localStorage.setItem(recentKey(pid), JSON.stringify(next));
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Plain-text representation of an inline atom node (chip), used when extracting
+ * a selection for AI polishing. Mirrors each node's renderHTML/renderText so the
+ * AI sees the same [Rx: ...] / [Dx: ...] / [Lab: ...] / @name tokens as getText().
+ */
+function leafTextForNode(node) {
+  const a = node.attrs || {};
+  switch (node.type.name) {
+    case 'medicineChip':
+      return a.dose ? `[Rx: ${a.name} ${a.dose}]` : `[Rx: ${a.name}]`;
+    case 'diagnosisChip':
+      return a.icd ? `[Dx: ${a.icd} ${a.name}]` : `[Dx: ${a.name}]`;
+    case 'labTestChip':
+      return `[Lab: ${a.name}]`;
+    case 'mention':
+      return `@${a.label || ''}`;
+    default:
+      return '';
+  }
 }
 
 /** Tiny extension: Ctrl/Cmd+S triggers Save. */
@@ -136,7 +220,7 @@ const SHORTCUTS = [
   { label: 'Undo', keys: 'Ctrl Z' },
   { label: 'Redo', keys: 'Ctrl Y' },
   { label: 'Save note', keys: 'Ctrl S' },
-  { label: 'Open commands', keys: '/' },
+  { label: 'Insert / search', keys: '/' },
   { label: 'Mention someone', keys: '@' },
 ];
 
@@ -150,13 +234,16 @@ export default function DoctorNotePad({
   const [draftStatus, setDraftStatus] = useState('idle'); // idle | saving | saved
   const [restored, setRestored] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [picker, setPicker] = useState(null); // { type, top, left }
   const [mentionPopover, setMentionPopover] = useState(null); // { data, top, left }
   const [moreMenu, setMoreMenu] = useState(null); // { top, left }
+  const [templateMenu, setTemplateMenu] = useState(null); // { top, left }
+  // { whole, range:{from,to}, original, status:'loading'|'done'|'error', suggestion, error }
+  const [aiPopup, setAiPopup] = useState(null);
 
   const autosaveTimer = useRef(null);
   const handleSaveRef = useRef(() => {});
   const moreBtnRef = useRef(null);
+  const templateBtnRef = useRef(null);
 
   /* --- autosave (debounced 2s) ------------------------------------- */
   const scheduleAutosave = (ed) => {
@@ -195,6 +282,153 @@ export default function DoctorNotePad({
     });
   };
 
+  /* --- build the unified "/" item list ----------------------------- */
+  function buildSlashItems(rawQuery) {
+    const { filter, term } = parseSlashQuery(rawQuery);
+
+    const medItem = (group) => (m) => ({
+      id: `${group}:med:${m.medId}:${m.dose}`,
+      kind: 'medicine',
+      group,
+      iconKey: 'medicine',
+      title: m.name,
+      dose: m.dose || '',
+      description: [m.category, (m.dosageForms || []).join('/')]
+        .filter(Boolean)
+        .join(' · '),
+      onSelect: ({ editor, range }) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent([
+            {
+              type: 'medicineChip',
+              attrs: {
+                medId: m.medId,
+                name: m.name,
+                dose: m.dose || '',
+                category: m.category,
+              },
+            },
+            { type: 'text', text: ' ' },
+          ])
+          .run();
+        rememberMedicine(patientId, {
+          medId: m.medId,
+          name: m.name,
+          dose: m.dose || '',
+          category: m.category,
+        });
+      },
+    });
+
+    const diagItem = (d) => ({
+      id: `diag:${d.id}`,
+      kind: 'diagnosis',
+      group: 'Diagnoses',
+      iconKey: 'diagnosis',
+      title: d.name,
+      description: [d.icd, d.category].filter(Boolean).join(' · '),
+      onSelect: ({ editor, range }) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent([
+            {
+              type: 'diagnosisChip',
+              attrs: {
+                diagId: d.id,
+                name: d.name,
+                icd: d.icd,
+                category: d.category,
+              },
+            },
+            { type: 'text', text: ' ' },
+          ])
+          .run();
+      },
+    });
+
+    const labItem = (t) => ({
+      id: `lab:${t.id}`,
+      kind: 'labtest',
+      group: 'Lab tests',
+      iconKey: 'labtest',
+      title: t.name,
+      description: [t.category, t.turnaround].filter(Boolean).join(' · '),
+      onSelect: ({ editor, range }) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent([
+            {
+              type: 'labTestChip',
+              attrs: {
+                labId: t.id,
+                name: t.name,
+                category: t.category,
+                turnaround: t.turnaround,
+              },
+            },
+            { type: 'text', text: ' ' },
+          ])
+          .run();
+      },
+    });
+
+    const actionItem = (a) => ({
+      id: `action:${a.id}`,
+      kind: 'action',
+      group: 'Quick actions',
+      iconKey: a.iconKey,
+      title: a.title,
+      description: a.description,
+      onSelect: ({ editor, range }) => {
+        const chain = editor.chain().focus().deleteRange(range);
+        if (a.action === 'vitals')
+          chain.insertContent(VITALS_TABLE_HTML + '<p></p>').run();
+        else if (a.action === 'date')
+          chain.insertContent(formatIndianDate()).run();
+        else if (a.action === 'heading') chain.setHeading({ level: 2 }).run();
+        else if (a.action === 'list') chain.toggleBulletList().run();
+        else if (a.action === 'divider') chain.setHorizontalRule().run();
+      },
+    });
+
+    /* empty query → recently-used medicines + quick actions */
+    if (!filter && !term) {
+      return [
+        ...getRecentMedicines(patientId).map(medItem('Recent')),
+        ...QUICK_ACTIONS.map(actionItem),
+      ];
+    }
+
+    /* typed query → search clinical data directly, grouped by type */
+    const items = [];
+    if (!filter || filter === 'medicine') {
+      items.push(...searchMedicineDoses(term).map(medItem('Medicines')));
+    }
+    if (!filter || filter === 'diagnosis') {
+      items.push(...searchDiagnoses(term).map(diagItem));
+    }
+    if (!filter || filter === 'labtest') {
+      items.push(...searchLabTests(term).map(labItem));
+    }
+    if (!filter) {
+      const lc = term.toLowerCase();
+      items.push(
+        ...QUICK_ACTIONS.filter(
+          (a) =>
+            a.title.toLowerCase().includes(lc) || a.id.includes(lc),
+        ).map(actionItem),
+      );
+    }
+    return items;
+  }
+
   /* --- the editor -------------------------------------------------- */
   const editor = useEditor({
     extensions: [
@@ -220,7 +454,7 @@ export default function DoctorNotePad({
         render: makeSuggestionRender(MentionList),
       }),
       SlashCommands.configure({
-        items: ({ query }) => buildSlashCommands(query, openPickerStable),
+        items: ({ query }) => buildSlashItems(query),
         render: makeSuggestionRender(SlashCommandList),
       }),
       SaveShortcut.configure({
@@ -244,28 +478,6 @@ export default function DoctorNotePad({
     },
   });
 
-  /* --- open a second-level picker at the caret --------------------- */
-  function openPickerStable(type, ed) {
-    const from = ed.state.selection.from;
-    let coords;
-    try {
-      coords = ed.view.coordsAtPos(from);
-    } catch {
-      coords = { left: 80, bottom: 200 };
-    }
-    const left = Math.min(coords.left, window.innerWidth - 284);
-    setPicker({
-      type,
-      top: coords.bottom + 6,
-      left: Math.max(12, left),
-    });
-  }
-
-  const closePicker = () => {
-    setPicker(null);
-    editor?.commands.focus();
-  };
-
   /* --- apply a template (replaces the whole document) -------------- */
   const applyTemplate = (tpl) => {
     if (!editor) return;
@@ -281,74 +493,103 @@ export default function DoctorNotePad({
     editor.chain().focus().setContent({ type: 'doc', content }).run();
   };
 
-  /* --- handle a result chosen in the second-level picker ----------- */
-  const handlePickerResult = (payload) => {
-    if (!editor) return;
-    if (payload.kind === 'medicine') {
-      editor
-        .chain()
-        .focus()
-        .insertContent([
-          {
-            type: 'medicineChip',
-            attrs: {
-              medId: payload.medId,
-              name: payload.name,
-              dose: payload.dose,
-              category: payload.category,
-            },
-          },
-          { type: 'text', text: ' ' },
-        ])
-        .run();
-    } else if (payload.kind === 'diagnosis') {
-      editor
-        .chain()
-        .focus()
-        .insertContent([
-          {
-            type: 'diagnosisChip',
-            attrs: {
-              diagId: payload.diagId,
-              name: payload.name,
-              icd: payload.icd,
-              category: payload.category,
-            },
-          },
-          { type: 'text', text: ' ' },
-        ])
-        .run();
-    } else if (payload.kind === 'labtest') {
-      editor
-        .chain()
-        .focus()
-        .insertContent([
-          {
-            type: 'labTestChip',
-            attrs: {
-              labId: payload.labId,
-              name: payload.name,
-              category: payload.category,
-              turnaround: payload.turnaround,
-            },
-          },
-          { type: 'text', text: ' ' },
-        ])
-        .run();
-    } else if (payload.kind === 'template') {
-      applyTemplate(payload.template);
-    } else if (payload.kind === 'dosage') {
-      editor
-        .chain()
-        .focus()
-        .insertContent([
-          { type: 'text', marks: [{ type: 'bold' }], text: payload.text },
-          { type: 'text', text: payload.sig ? ` — ${payload.sig}` : '' },
-        ])
-        .run();
+  /* --- AI actions (polish, expand, summarize, explain) ------------- */
+  const toParagraphs = (txt) =>
+    txt.split('\n').map((line) => ({
+      type: 'paragraph',
+      content: line.trim() ? [{ type: 'text', text: line }] : [],
+    }));
+
+  const startAi = async (action, payload) => {
+    setAiPopup({
+      action,
+      whole: payload.whole,
+      range: payload.range,
+      original: payload.text,
+      status: 'loading',
+      suggestion: '',
+      error: '',
+    });
+    try {
+      const suggestion = await runAiAction(payload.text, action.id);
+      setAiPopup((p) =>
+        p && p.status === 'loading' ? { ...p, status: 'done', suggestion } : p,
+      );
+    } catch (e) {
+      setAiPopup((p) =>
+        p && p.status === 'loading'
+          ? { ...p, status: 'error', error: e.message }
+          : p,
+      );
+      import('@sentry/react').then(({ captureException }) =>
+        captureException(e, {
+          tags: { context: 'ai', action: action.id, patientId },
+        }),
+      );
     }
-    setPicker(null);
   };
+
+  const handleAi = (actionId) => {
+    if (!editor || aiPopup?.status === 'loading') return;
+    const action = AI_ACTIONS.find((a) => a.id === actionId);
+    if (!action) return;
+    const { from, to, empty } = editor.state.selection;
+    const payload = empty
+      ? {
+          whole: true,
+          range: { from: 0, to: editor.state.doc.content.size },
+          text: editor.getText({ blockSeparator: '\n' }),
+        }
+      : {
+          whole: false,
+          range: { from, to },
+          text: editor.state.doc.textBetween(from, to, '\n', leafTextForNode),
+        };
+    if (!payload.text.trim()) return;
+    startAi(action, payload);
+  };
+
+  const retryAi = () => {
+    if (aiPopup) {
+      startAi(aiPopup.action, {
+        whole: aiPopup.whole,
+        range: aiPopup.range,
+        text: aiPopup.original,
+      });
+    }
+  };
+
+  const acceptAi = () => {
+    if (!editor || !aiPopup || aiPopup.status !== 'done') return;
+    const { action, whole, range, suggestion } = aiPopup;
+    if (action.mode === 'append') {
+      const endPos = editor.state.doc.content.size;
+      editor
+        .chain()
+        .focus()
+        .insertContentAt(endPos, [
+          { type: 'horizontalRule' },
+          {
+            type: 'heading',
+            attrs: { level: 3 },
+            content: [{ type: 'text', text: action.heading }],
+          },
+          ...toParagraphs(suggestion),
+        ])
+        .run();
+    } else if (whole) {
+      editor
+        .chain()
+        .focus()
+        .setContent({ type: 'doc', content: toParagraphs(suggestion) })
+        .run();
+    } else {
+      editor.chain().focus().insertContentAt(range, suggestion).run();
+    }
+    setAiPopup(null);
+  };
+
+  const rejectAi = () => setAiPopup(null);
 
   /* --- save -------------------------------------------------------- */
   const handleSave = () => {
@@ -393,12 +634,24 @@ export default function DoctorNotePad({
   );
 
   const openMoreMenu = () => {
+    setTemplateMenu(null);
     if (moreMenu) {
       setMoreMenu(null);
       return;
     }
     const r = moreBtnRef.current?.getBoundingClientRect();
     if (r) setMoreMenu({ top: r.bottom + 6, left: r.right - 230 });
+  };
+
+  const openTemplateMenu = () => {
+    setMoreMenu(null);
+    if (templateMenu) {
+      setTemplateMenu(null);
+      return;
+    }
+    const r = templateBtnRef.current?.getBoundingClientRect();
+    if (r)
+      setTemplateMenu({ top: r.bottom + 6, left: Math.max(12, r.right - 250) });
   };
 
   const { words, lines } = getCounts(editor);
@@ -450,6 +703,15 @@ export default function DoctorNotePad({
         <div className="np-header__right">
           <button
             type="button"
+            className="np-templates-btn"
+            ref={templateBtnRef}
+            onClick={openTemplateMenu}
+          >
+            <IconFile size={13} />
+            Templates
+          </button>
+          <button
+            type="button"
             className="np-icon-btn"
             title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
             onClick={() => setIsFullscreen((v) => !v)}
@@ -473,7 +735,12 @@ export default function DoctorNotePad({
       </header>
 
       {/* ZONE 2 — TOOLBAR */}
-      <Toolbar editor={editor} />
+      <Toolbar
+        editor={editor}
+        aiActions={AI_ACTIONS}
+        onAiAction={handleAi}
+        aiBusy={!!aiPopup}
+      />
 
       {/* ZONE 3a — EDITOR */}
       <div className="np-editor-area">
@@ -505,6 +772,44 @@ export default function DoctorNotePad({
       </div>
 
       {/* FLOATING LAYERS */}
+      {templateMenu && (
+        <>
+          <div
+            className="np-overlay"
+            onMouseDown={() => setTemplateMenu(null)}
+          />
+          <div
+            className="np-floating"
+            style={{ top: templateMenu.top, left: templateMenu.left }}
+          >
+            <div
+              className="np-template-menu"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="np-template-menu__title">
+                <IconFile size={12} /> Apply a template
+              </div>
+              {TEMPLATES.map((t) => (
+                <button
+                  type="button"
+                  key={t.id}
+                  className="np-template-menu__row"
+                  onClick={() => {
+                    applyTemplate(t);
+                    setTemplateMenu(null);
+                  }}
+                >
+                  <span className="np-template-menu__name">{t.title}</span>
+                  <span className="np-template-menu__desc">
+                    {t.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
       {moreMenu && (
         <>
           <div className="np-overlay" onMouseDown={() => setMoreMenu(null)} />
@@ -527,22 +832,6 @@ export default function DoctorNotePad({
         </>
       )}
 
-      {picker && (
-        <>
-          <div className="np-overlay" onMouseDown={closePicker} />
-          <div
-            className="np-floating"
-            style={{ top: picker.top, left: picker.left }}
-          >
-            <CommandPicker
-              type={picker.type}
-              onPick={handlePickerResult}
-              onClose={closePicker}
-            />
-          </div>
-        </>
-      )}
-
       {mentionPopover && (
         <>
           <div
@@ -554,6 +843,85 @@ export default function DoctorNotePad({
             style={{ top: mentionPopover.top, left: mentionPopover.left }}
           >
             <MentionPopover data={mentionPopover.data} />
+          </div>
+        </>
+      )}
+
+      {aiPopup && (
+        <>
+          <div className="np-overlay" onMouseDown={rejectAi} />
+          <div
+            className="np-ai-popup"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="np-ai-popup__title">
+              <IconSparkles size={13} />
+              {aiPopup.action.label}
+            </div>
+
+            {aiPopup.status === 'loading' && (
+              <div className="np-ai-popup__loading">
+                <IconSpinner size={15} />
+                Working on it…
+              </div>
+            )}
+            {aiPopup.status === 'error' && (
+              <div className="np-ai-popup__error">{aiPopup.error}</div>
+            )}
+            {aiPopup.status === 'done' && (
+              <div className="np-ai-popup__text">{aiPopup.suggestion}</div>
+            )}
+
+            <div className="np-ai-popup__actions">
+              {aiPopup.status === 'loading' && (
+                <button
+                  type="button"
+                  className="np-btn-cancel"
+                  onClick={rejectAi}
+                >
+                  Cancel
+                </button>
+              )}
+              {aiPopup.status === 'error' && (
+                <>
+                  <button
+                    type="button"
+                    className="np-btn-cancel"
+                    onClick={rejectAi}
+                  >
+                    Close
+                  </button>
+                  <button
+                    type="button"
+                    className="np-btn-save"
+                    onClick={retryAi}
+                  >
+                    Retry
+                  </button>
+                </>
+              )}
+              {aiPopup.status === 'done' && (
+                <>
+                  <button
+                    type="button"
+                    className="np-btn-cancel"
+                    onClick={rejectAi}
+                  >
+                    Reject
+                  </button>
+                  <button
+                    type="button"
+                    className="np-btn-save"
+                    onClick={acceptAi}
+                  >
+                    <IconCheck size={13} />
+                    {aiPopup.action.mode === 'append'
+                      ? 'Add to note'
+                      : 'Accept'}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </>
       )}

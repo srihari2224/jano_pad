@@ -26,6 +26,8 @@ export const SlashCommands = Extension.create({
         editor: this.editor,
         char: '/',
         startOfLine: false,
+        // allow spaces so "/iron 200" or "/erythro 6000" stay one query
+        allowSpaces: true,
         items: this.options.items,
         render: this.options.render,
         // `props` is the command object the user picked.

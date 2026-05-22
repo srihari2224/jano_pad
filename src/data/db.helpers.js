@@ -127,6 +127,38 @@ export function searchMedicines(query) {
 }
 
 /**
+ * searchMedicineDoses(query) — flattened medicine × dose rows for the unified
+ * "/" menu. Every common dose becomes its own selectable row, so the doctor
+ * picks a medicine AND its dose in a single step.
+ *
+ * Matching is multi-word: each whitespace-separated word in the query must
+ * appear somewhere in "name + category + dose" — so "iron 200" narrows
+ * straight to the Iron Sucrose 200mg row. An empty query returns every row.
+ *
+ * @returns {Array} rows: { medId, name, category, dosageForms, dose }
+ */
+export function searchMedicineDoses(query) {
+  const words = lc(query).trim().split(/\s+/).filter(Boolean);
+  const rows = [];
+  for (const m of db.medicines) {
+    const doses = m.commonDoses && m.commonDoses.length ? m.commonDoses : [''];
+    for (const dose of doses) {
+      const hay = lc(`${m.name} ${m.category} ${dose}`);
+      if (words.every((w) => hay.includes(w))) {
+        rows.push({
+          medId: m.id,
+          name: m.name,
+          category: m.category,
+          dosageForms: m.dosageForms || [],
+          dose,
+        });
+      }
+    }
+  }
+  return rows;
+}
+
+/**
  * searchDiagnoses(query) — match diagnoses by name or ICD code.
  * @returns {Array} raw diagnosis records: { id, name, icd, category }
  */
@@ -189,6 +221,7 @@ export function getDoctorById(id) {
 export default {
   searchMentions,
   searchMedicines,
+  searchMedicineDoses,
   searchDiagnoses,
   searchLabTests,
   getAllTemplates,

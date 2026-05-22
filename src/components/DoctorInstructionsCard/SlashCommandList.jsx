@@ -1,9 +1,13 @@
 /**
  * SlashCommandList.jsx — the floating popup shown when the user types "/".
- * First-level command list. Filters live, keyboard navigable.
+ *
+ * A single unified list: medicines (with dose baked into each row),
+ * diagnoses, lab tests and quick actions, grouped by section. One Enter
+ * inserts the chip — there is no second popup. Keyboard navigable.
  */
 import {
   forwardRef,
+  Fragment,
   useEffect,
   useImperativeHandle,
   useRef,
@@ -12,10 +16,8 @@ import {
 import {
   IconPill,
   IconClipboard,
-  IconFile,
   IconActivity,
   IconFlask,
-  IconSyringe,
   IconCalendar,
   IconHeading,
   IconListBullet,
@@ -25,10 +27,8 @@ import {
 const ICONS = {
   medicine: IconPill,
   diagnosis: IconClipboard,
-  template: IconFile,
-  vitals: IconActivity,
   labtest: IconFlask,
-  dosage: IconSyringe,
+  vitals: IconActivity,
   date: IconCalendar,
   heading: IconHeading,
   list: IconListBullet,
@@ -78,68 +78,57 @@ const SlashCommandList = forwardRef(function SlashCommandList(
       <div className="np-popup np-popup--slash">
         <div className="np-popup__header">
           <span className="np-popup__header-badge">/</span>
-          <span className="np-popup__header-label">Commands</span>
+          <span className="np-popup__header-label">Insert</span>
         </div>
-        <div className="np-popup__empty">No matching commands</div>
+        <div className="np-popup__empty">No matches</div>
       </div>
     );
   }
 
-  /* Split clinical vs formatting commands for grouping */
-  const clinicalKeys = new Set(['medicine','diagnosis','labtest','dosage','vitals','template','date']);
-  const clinical = items.filter(it => clinicalKeys.has(it.iconKey));
-  const format   = items.filter(it => !clinicalKeys.has(it.iconKey));
-
-  const renderItem = (item, i, globalIndex) => {
-    const Icon = ICONS[item.iconKey];
-    return (
-      <button
-        type="button"
-        key={item.id}
-        className={`np-item ${globalIndex === selected ? 'is-selected' : ''}`}
-        onMouseEnter={() => setSelected(globalIndex)}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          pick(globalIndex);
-        }}
-      >
-        <span className={`np-item__icon np-ic--${item.iconKey}`}>
-          {Icon ? <Icon size={16} /> : null}
-        </span>
-        <span className="np-item__body">
-          <span className="np-item__title">{item.title}</span>
-          <span className="np-item__desc">{item.description}</span>
-        </span>
-      </button>
-    );
-  };
+  let lastGroup = null;
 
   return (
     <div className="np-popup np-popup--slash" ref={listRef}>
       <div className="np-popup__header">
         <span className="np-popup__header-badge">/</span>
-        <span className="np-popup__header-label">Commands</span>
+        <span className="np-popup__header-label">Insert</span>
         <span className="np-popup__header-hint">↑↓ navigate · ↵ insert</span>
       </div>
       <div className="np-popup__items">
-        {clinical.length > 0 && (
-          <>
-            {clinical.length < items.length && (
-              <div className="np-popup__group-label">Clinical</div>
-            )}
-            {clinical.map((item) => renderItem(item, null, items.indexOf(item)))}
-          </>
-        )}
-        {format.length > 0 && (
-          <>
-            {clinical.length > 0 && <div className="np-popup__group-divider" />}
-            <div className="np-popup__group-label">Format</div>
-            {format.map((item) => renderItem(item, null, items.indexOf(item)))}
-          </>
-        )}
-        {clinical.length === 0 && format.length === 0 && items.map((item, i) =>
-          renderItem(item, i, i)
-        )}
+        {items.map((item, i) => {
+          const Icon = ICONS[item.iconKey];
+          const showGroup = item.group !== lastGroup;
+          lastGroup = item.group;
+          return (
+            <Fragment key={item.id}>
+              {showGroup && (
+                <div className="np-popup__group-label">{item.group}</div>
+              )}
+              <button
+                type="button"
+                className={`np-item ${i === selected ? 'is-selected' : ''}`}
+                onMouseEnter={() => setSelected(i)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  pick(i);
+                }}
+              >
+                <span className={`np-item__icon np-ic--${item.iconKey}`}>
+                  {Icon ? <Icon size={16} /> : null}
+                </span>
+                <span className="np-item__body">
+                  <span className="np-item__title">
+                    {item.title}
+                    {item.dose ? (
+                      <span className="np-item__dose">{item.dose}</span>
+                    ) : null}
+                  </span>
+                  <span className="np-item__desc">{item.description}</span>
+                </span>
+              </button>
+            </Fragment>
+          );
+        })}
       </div>
     </div>
   );
