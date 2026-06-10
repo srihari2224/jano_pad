@@ -184,18 +184,11 @@ export function searchLabTests(query) {
 
 /**
  * getAllTemplates() — every notepad template.
- * Normalized to { id, title, description, content } for the /template list.
- * `content` is plain text; newlines become separate paragraphs on insert.
- * @returns {Array}
+ * Re-exports from src/data/templates.js (structured templates).
+ * Each item: { id, title, description, template }.
  */
-export function getAllTemplates() {
-  return db.notepadTemplates.map((t) => ({
-    id: t.id,
-    title: t.name,
-    description: t.category,
-    content: t.content,
-  }));
-}
+import { getAllTemplates } from './templates';
+export { getAllTemplates };
 
 /* ------------------------------------------------------------------ */
 /* single-record lookups                                               */

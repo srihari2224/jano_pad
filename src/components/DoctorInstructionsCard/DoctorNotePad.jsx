@@ -38,21 +38,16 @@ import {
   searchLabTests,
   getAllTemplates,
 } from '../../data/db.helpers';
+import { getTemplateById } from '../../data/templates';
 
-import Toolbar from './Toolbar';
 import SlashCommandList from './SlashCommandList';
 import MentionList from './MentionList';
 import MentionPopover from './MentionPopover';
+import TemplateStack from './templates/TemplateStack';
+import { toText as templateToText } from './templates/templateSerializer';
 import {
-  IconPencil,
-  IconMaximize,
-  IconMinimize,
-  IconMoreVertical,
-  IconSave,
   IconCheck,
   IconSpinner,
-  IconKeyboard,
-  IconFile,
   IconSparkles,
 } from './icons';
 import { formatIndianDate } from './utils';
@@ -125,6 +120,7 @@ const FILTER_KEYWORDS = {
   medicine: 'medicine', medicines: 'medicine', med: 'medicine', meds: 'medicine', rx: 'medicine',
   diagnosis: 'diagnosis', diagnoses: 'diagnosis', diag: 'diagnosis', dx: 'diagnosis',
   lab: 'labtest', labs: 'labtest', labtest: 'labtest', test: 'labtest', tests: 'labtest',
+  template: 'template', templates: 'template', tmpl: 'template', form: 'template',
 };
 
 /** Split a "/" query into an optional type filter and the search term. */
@@ -213,17 +209,6 @@ function getCounts(editor) {
   return { words, lines };
 }
 
-const SHORTCUTS = [
-  { label: 'Bold', keys: 'Ctrl B' },
-  { label: 'Italic', keys: 'Ctrl I' },
-  { label: 'Underline', keys: 'Ctrl U' },
-  { label: 'Undo', keys: 'Ctrl Z' },
-  { label: 'Redo', keys: 'Ctrl Y' },
-  { label: 'Save note', keys: 'Ctrl S' },
-  { label: 'Insert / search', keys: '/' },
-  { label: 'Mention someone', keys: '@' },
-];
-
 export default function DoctorNotePad({
   patientId = 'pat001',
   initialContent = null,
@@ -233,17 +218,32 @@ export default function DoctorNotePad({
   const [headerSaved, setHeaderSaved] = useState(true);
   const [draftStatus, setDraftStatus] = useState('idle'); // idle | saving | saved
   const [restored, setRestored] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [mentionPopover, setMentionPopover] = useState(null); // { data, top, left }
-  const [moreMenu, setMoreMenu] = useState(null); // { top, left }
-  const [templateMenu, setTemplateMenu] = useState(null); // { top, left }
   // { whole, range:{from,to}, original, status:'loading'|'done'|'error', suggestion, error }
   const [aiPopup, setAiPopup] = useState(null);
+  const [selMenu, setSelMenu] = useState(null); // { top, left } for selection AI button
+  const [selAiOpen, setSelAiOpen] = useState(false);
+  /* Applied template instances: { instanceId, template, values, collapsed } */
+  const [templates, setTemplates] = useState([]);
+  const [lastAddedTemplateId, setLastAddedTemplateId] = useState(null);
+  const instanceIdRef = useRef(0);
 
   const autosaveTimer = useRef(null);
   const handleSaveRef = useRef(() => {});
-  const moreBtnRef = useRef(null);
-  const templateBtnRef = useRef(null);
+  const templatesRef = useRef(templates);
+  templatesRef.current = templates;
+
+  /* --- persistence helpers ------------------------------------------ */
+  const buildDraft = (editorJson) => ({
+    version: 2,
+    editor: editorJson,
+    templates: templatesRef.current.map((inst) => ({
+      instanceId: inst.instanceId,
+      templateId: inst.template.id,
+      values: inst.values,
+      collapsed: inst.collapsed,
+    })),
+  });
 
   /* --- autosave (debounced 2s) ------------------------------------- */
   const scheduleAutosave = (ed) => {
@@ -253,7 +253,7 @@ export default function DoctorNotePad({
       try {
         localStorage.setItem(
           `draft_note_${patientId}`,
-          JSON.stringify(ed.getJSON()),
+          JSON.stringify(buildDraft(ed.getJSON())),
         );
       } catch (e) {
         import('@sentry/react').then(({ captureException }) =>
@@ -398,9 +398,23 @@ export default function DoctorNotePad({
       },
     });
 
-    /* empty query → recently-used medicines + quick actions */
+    const templateItem = (t) => ({
+      id: `tmpl:${t.id}`,
+      kind: 'template',
+      group: 'Templates',
+      iconKey: t.description || 'template', // description = category (assessment/summary/…)
+      title: t.title,
+      description: t.description,
+      onSelect: ({ editor, range }) => {
+        editor.chain().focus().deleteRange(range).run();
+        applyTemplate(t);
+      },
+    });
+
+    /* empty query → templates + recently-used medicines + quick actions */
     if (!filter && !term) {
       return [
+        ...TEMPLATES.map(templateItem),
         ...getRecentMedicines(patientId).map(medItem('Recent')),
         ...QUICK_ACTIONS.map(actionItem),
       ];
@@ -408,6 +422,16 @@ export default function DoctorNotePad({
 
     /* typed query → search clinical data directly, grouped by type */
     const items = [];
+    const lc = term.toLowerCase();
+    if (!filter || filter === 'template') {
+      items.push(
+        ...TEMPLATES.filter(
+          (t) =>
+            t.title.toLowerCase().includes(lc) ||
+            String(t.description || '').toLowerCase().includes(lc),
+        ).map(templateItem),
+      );
+    }
     if (!filter || filter === 'medicine') {
       items.push(...searchMedicineDoses(term).map(medItem('Medicines')));
     }
@@ -418,7 +442,6 @@ export default function DoctorNotePad({
       items.push(...searchLabTests(term).map(labItem));
     }
     if (!filter) {
-      const lc = term.toLowerCase();
       items.push(
         ...QUICK_ACTIONS.filter(
           (a) =>
@@ -475,22 +498,99 @@ export default function DoctorNotePad({
       setHeaderSaved(false);
       setDraftStatus('idle');
       scheduleAutosave(ed);
+      updateSelMenu(ed);
     },
+    onSelectionUpdate: ({ editor: ed }) => updateSelMenu(ed),
   });
 
-  /* --- apply a template (replaces the whole document) -------------- */
-  const applyTemplate = (tpl) => {
-    if (!editor) return;
-    if (!editor.isEmpty) {
-      // eslint-disable-next-line no-alert
-      if (!window.confirm('Replace the current note with this template?')) return;
+  /* --- floating AI button on text selection ------------------------ */
+  const lastSelRef = useRef('');
+  const updateSelMenu = (ed) => {
+    const { from, to, empty } = ed.state.selection;
+    if (empty) {
+      setSelMenu(null);
+      setSelAiOpen(false);
+      lastSelRef.current = '';
+      return;
     }
-    const lines = String(tpl.content || '').split('\n');
-    const content = lines.map((line) => ({
-      type: 'paragraph',
-      content: line.trim() ? [{ type: 'text', text: line }] : [],
-    }));
-    editor.chain().focus().setContent({ type: 'doc', content }).run();
+    const text = ed.state.doc.textBetween(from, to, ' ');
+    if (!text.trim()) {
+      setSelMenu(null);
+      setSelAiOpen(false);
+      lastSelRef.current = '';
+      return;
+    }
+    try {
+      const a = ed.view.coordsAtPos(from);
+      const b = ed.view.coordsAtPos(to);
+      setSelMenu({
+        top: Math.min(a.top, b.top),
+        left: (a.left + b.left) / 2,
+      });
+      // collapse the action menu only when the selection itself changes,
+      // not on every spurious selection-update (e.g. clicking the AI button)
+      const sig = `${from}:${to}`;
+      if (sig !== lastSelRef.current) {
+        setSelAiOpen(false);
+        lastSelRef.current = sig;
+      }
+    } catch {
+      setSelMenu(null);
+    }
+  };
+
+  /* --- add a structured template instance to the stack ------------- */
+  const applyTemplate = (tplItem) => {
+    // tplItem from getAllTemplates() => { id, title, description, template }
+    const tpl = tplItem.template || tplItem;
+    instanceIdRef.current += 1;
+    const newInstanceId = `tpl-${instanceIdRef.current}-${tpl.id}`;
+    setTemplates((prev) => [
+      ...prev.map((p) => ({ ...p, collapsed: true })),
+      { instanceId: newInstanceId, template: tpl, values: {}, collapsed: false },
+    ]);
+    setLastAddedTemplateId(newInstanceId);
+    setHeaderSaved(false);
+    setDraftStatus('idle');
+    if (editor) scheduleAutosave(editor);
+  };
+
+  const updateInstance = (instanceId, patch) => {
+    setTemplates((prev) =>
+      prev.map((p) => {
+        if (p.instanceId !== instanceId) return p;
+        const next = { ...p, ...patch };
+        // merge field values rather than replacing, so partial updates
+        // (one field at a time) never drop other fields
+        if (patch.values) next.values = { ...p.values, ...patch.values };
+        return next;
+      }),
+    );
+    setHeaderSaved(false);
+    setDraftStatus('idle');
+    if (editor) scheduleAutosave(editor);
+  };
+
+  const toggleCollapseInstance = (instanceId) => {
+    setTemplates((prev) =>
+      prev.map((p) => {
+        if (p.instanceId === instanceId) return { ...p, collapsed: !p.collapsed };
+        // collapse others when expanding one
+        const target = prev.find((q) => q.instanceId === instanceId);
+        if (target && target.collapsed) return { ...p, collapsed: true };
+        return p;
+      }),
+    );
+    setLastAddedTemplateId(instanceId);
+  };
+
+  const removeInstance = (instanceId) => {
+    // eslint-disable-next-line no-alert
+    if (!window.confirm('Remove this template from the note?')) return;
+    setTemplates((prev) => prev.filter((p) => p.instanceId !== instanceId));
+    setHeaderSaved(false);
+    setDraftStatus('idle');
+    if (editor) scheduleAutosave(editor);
   };
 
   /* --- AI actions (polish, expand, summarize, explain) ------------- */
@@ -501,6 +601,8 @@ export default function DoctorNotePad({
     }));
 
   const startAi = async (action, payload) => {
+    setSelMenu(null);
+    setSelAiOpen(false);
     setAiPopup({
       action,
       whole: payload.whole,
@@ -529,6 +631,12 @@ export default function DoctorNotePad({
     }
   };
 
+  /** Serialized text of all filled template cards (prepended for whole-note AI). */
+  const templatesText = () =>
+    templates
+      .map((inst) => templateToText(inst.template, inst.values))
+      .join('\n\n');
+
   const handleAi = (actionId) => {
     if (!editor || aiPopup?.status === 'loading') return;
     const action = AI_ACTIONS.find((a) => a.id === actionId);
@@ -538,7 +646,9 @@ export default function DoctorNotePad({
       ? {
           whole: true,
           range: { from: 0, to: editor.state.doc.content.size },
-          text: editor.getText({ blockSeparator: '\n' }),
+          text: [templatesText(), editor.getText({ blockSeparator: '\n' })]
+            .filter((s) => s.trim())
+            .join('\n\n'),
         }
       : {
           whole: false,
@@ -594,10 +704,10 @@ export default function DoctorNotePad({
   /* --- save -------------------------------------------------------- */
   const handleSave = () => {
     if (!editor) return;
-    const json = editor.getJSON();
-    onSave?.(json);
+    const draft = buildDraft(editor.getJSON());
+    onSave?.(draft);
     try {
-      localStorage.setItem(`draft_note_${patientId}`, JSON.stringify(json));
+      localStorage.setItem(`draft_note_${patientId}`, JSON.stringify(draft));
     } catch {
       /* ignore */
     }
@@ -611,12 +721,39 @@ export default function DoctorNotePad({
     if (!editor || initialContent) return;
     try {
       const raw = localStorage.getItem(`draft_note_${patientId}`);
-      if (raw) {
-        editor.commands.setContent(JSON.parse(raw));
-        setRestored(true);
-        setHeaderSaved(true);
-        window.setTimeout(() => setRestored(false), 2600);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.version === 2) {
+        if (parsed.editor) editor.commands.setContent(parsed.editor);
+        const restoredInstances = (parsed.templates || [])
+          .map((t) => {
+            const template = getTemplateById(t.templateId);
+            if (!template) return null;
+            return {
+              instanceId: t.instanceId,
+              template,
+              values: t.values || {},
+              collapsed: t.collapsed !== false, // restore collapsed by default
+            };
+          })
+          .filter(Boolean);
+        if (restoredInstances.length) {
+          // keep instanceIdRef ahead of the highest restored id ("tpl-<n>-...")
+          instanceIdRef.current = Math.max(
+            0,
+            ...restoredInstances.map(
+              (i) => parseInt(String(i.instanceId).split('-')[1], 10) || 0,
+            ),
+          );
+          setTemplates(restoredInstances);
+        }
+      } else {
+        // legacy draft: raw TipTap JSON
+        editor.commands.setContent(parsed);
       }
+      setRestored(true);
+      setHeaderSaved(true);
+      window.setTimeout(() => setRestored(false), 2600);
     } catch (e) {
       import('@sentry/react').then(({ captureException }) =>
         captureException(e, { tags: { context: 'draft-restore', patientId } }),
@@ -633,26 +770,6 @@ export default function DoctorNotePad({
     [],
   );
 
-  const openMoreMenu = () => {
-    setTemplateMenu(null);
-    if (moreMenu) {
-      setMoreMenu(null);
-      return;
-    }
-    const r = moreBtnRef.current?.getBoundingClientRect();
-    if (r) setMoreMenu({ top: r.bottom + 6, left: r.right - 230 });
-  };
-
-  const openTemplateMenu = () => {
-    setMoreMenu(null);
-    if (templateMenu) {
-      setTemplateMenu(null);
-      return;
-    }
-    const r = templateBtnRef.current?.getBoundingClientRect();
-    if (r)
-      setTemplateMenu({ top: r.bottom + 6, left: Math.max(12, r.right - 250) });
-  };
 
   const { words, lines } = getCounts(editor);
 
@@ -684,66 +801,19 @@ export default function DoctorNotePad({
   }
 
   return (
-    <div className={`doctor-notepad${isFullscreen ? ' is-fullscreen' : ''}`}>
-      {/* ZONE 1 — HEADER */}
-      <header className="np-header">
-        <div className="np-header__left">
-          <span className="np-header__icon">
-            <IconPencil size={16} />
-          </span>
-          <span className="np-header__title">Doctor&apos;s Instructions</span>
-          <span
-            className={`np-status-pill ${
-              headerSaved ? 'is-saved' : 'is-unsaved'
-            }`}
-          >
-            {headerSaved ? '✓ Draft saved' : '● Unsaved'}
-          </span>
-        </div>
-        <div className="np-header__right">
-          <button
-            type="button"
-            className="np-templates-btn"
-            ref={templateBtnRef}
-            onClick={openTemplateMenu}
-          >
-            <IconFile size={13} />
-            Templates
-          </button>
-          <button
-            type="button"
-            className="np-icon-btn"
-            title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
-            onClick={() => setIsFullscreen((v) => !v)}
-          >
-            {isFullscreen ? (
-              <IconMinimize size={15} />
-            ) : (
-              <IconMaximize size={15} />
-            )}
-          </button>
-          <button
-            type="button"
-            className="np-icon-btn"
-            title="Shortcuts & commands"
-            ref={moreBtnRef}
-            onClick={openMoreMenu}
-          >
-            <IconMoreVertical size={15} />
-          </button>
-        </div>
-      </header>
-
-      {/* ZONE 2 — TOOLBAR */}
-      <Toolbar
-        editor={editor}
-        aiActions={AI_ACTIONS}
-        onAiAction={handleAi}
-        aiBusy={!!aiPopup}
-      />
-
-      {/* ZONE 3a — EDITOR */}
+    <div className="doctor-notepad">
+      {/* TEMPLATE CARDS + FREE EDITOR */}
       <div className="np-editor-area">
+        <TemplateStack
+          instances={templates}
+          onUpdate={updateInstance}
+          onRemove={removeInstance}
+          onToggleCollapse={toggleCollapseInstance}
+          lastAddedId={lastAddedTemplateId}
+        />
+        {templates.length > 0 && (
+          <div className="np-free-notes-divider">free notes</div>
+        )}
         <EditorContent editor={editor} />
       </div>
 
@@ -752,86 +822,98 @@ export default function DoctorNotePad({
         <span className="np-statusbar__count">
           {words} {words === 1 ? 'word' : 'words'} · {lines}{' '}
           {lines === 1 ? 'line' : 'lines'}
+          {templates.length > 0 &&
+            ` · ${templates.length} ${templates.length === 1 ? 'template' : 'templates'}`}
         </span>
         {draftEl}
       </div>
 
-      {/* ZONE 4 — FOOTER */}
-      <div className="np-footer">
-        <button
-          type="button"
-          className="np-btn-cancel"
-          onClick={() => onCancel?.()}
-        >
-          Cancel
-        </button>
-        <button type="button" className="np-btn-save" onClick={handleSave}>
-          <IconSave size={13} />
-          Save
-        </button>
-      </div>
 
-      {/* FLOATING LAYERS */}
-      {templateMenu && (
-        <>
-          <div
-            className="np-overlay"
-            onMouseDown={() => setTemplateMenu(null)}
-          />
-          <div
-            className="np-floating"
-            style={{ top: templateMenu.top, left: templateMenu.left }}
-          >
-            <div
-              className="np-template-menu"
-              onMouseDown={(e) => e.stopPropagation()}
+      {/* SELECTION BUBBLE — formatting + AI, appears above a text selection */}
+      {selMenu && !aiPopup && editor && (
+        <div
+          className="np-sel-ai"
+          style={{ top: selMenu.top, left: selMenu.left }}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <div className="np-sel-bar">
+            <button
+              type="button"
+              className={`np-sel-fmt${editor.isActive('bold') ? ' is-active' : ''}`}
+              title="Bold"
+              onClick={() => editor.chain().focus().toggleBold().run()}
             >
-              <div className="np-template-menu__title">
-                <IconFile size={12} /> Apply a template
-              </div>
-              {TEMPLATES.map((t) => (
+              <strong>B</strong>
+            </button>
+            <button
+              type="button"
+              className={`np-sel-fmt${editor.isActive('italic') ? ' is-active' : ''}`}
+              title="Italic"
+              onClick={() => editor.chain().focus().toggleItalic().run()}
+            >
+              <em>I</em>
+            </button>
+            <button
+              type="button"
+              className={`np-sel-fmt${editor.isActive('underline') ? ' is-active' : ''}`}
+              title="Underline"
+              onClick={() => editor.chain().focus().toggleUnderline().run()}
+            >
+              <u>U</u>
+            </button>
+            <button
+              type="button"
+              className={`np-sel-fmt${editor.isActive('strike') ? ' is-active' : ''}`}
+              title="Strikethrough"
+              onClick={() => editor.chain().focus().toggleStrike().run()}
+            >
+              <s>S</s>
+            </button>
+            <span className="np-sel-bar__div" />
+            <button
+              type="button"
+              className={`np-sel-fmt${editor.isActive('bulletList') ? ' is-active' : ''}`}
+              title="Bullet list"
+              onClick={() => editor.chain().focus().toggleBulletList().run()}
+            >
+              ☰
+            </button>
+            <button
+              type="button"
+              className={`np-sel-fmt${editor.isActive('heading', { level: 2 }) ? ' is-active' : ''}`}
+              title="Heading"
+              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+            >
+              H
+            </button>
+            <span className="np-sel-bar__div" />
+            <button
+              type="button"
+              className={`np-sel-ai__btn${selAiOpen ? ' is-open' : ''}`}
+              onClick={() => setSelAiOpen((v) => !v)}
+            >
+              <IconSparkles size={13} />
+              AI
+            </button>
+          </div>
+          {selAiOpen && (
+            <div className="np-sel-ai__menu">
+              {AI_ACTIONS.map((a) => (
                 <button
                   type="button"
-                  key={t.id}
-                  className="np-template-menu__row"
-                  onClick={() => {
-                    applyTemplate(t);
-                    setTemplateMenu(null);
-                  }}
+                  key={a.id}
+                  className="np-sel-ai__action"
+                  onClick={() => handleAi(a.id)}
                 >
-                  <span className="np-template-menu__name">{t.title}</span>
-                  <span className="np-template-menu__desc">
-                    {t.description}
-                  </span>
+                  {a.label}
                 </button>
               ))}
             </div>
-          </div>
-        </>
+          )}
+        </div>
       )}
 
-      {moreMenu && (
-        <>
-          <div className="np-overlay" onMouseDown={() => setMoreMenu(null)} />
-          <div
-            className="np-floating"
-            style={{ top: moreMenu.top, left: moreMenu.left }}
-          >
-            <div className="np-moremenu" onMouseDown={(e) => e.stopPropagation()}>
-              <div className="np-moremenu__title">
-                <IconKeyboard size={12} /> Keyboard & commands
-              </div>
-              {SHORTCUTS.map((s) => (
-                <div className="np-moremenu__row" key={s.label}>
-                  <span>{s.label}</span>
-                  <span className="np-moremenu__key">{s.keys}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </>
-      )}
-
+      {/* FLOATING LAYERS */}
       {mentionPopover && (
         <>
           <div

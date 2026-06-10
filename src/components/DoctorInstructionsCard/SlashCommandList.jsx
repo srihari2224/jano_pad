@@ -22,6 +22,8 @@ import {
   IconHeading,
   IconListBullet,
   IconMinus,
+  IconFile,
+  IconAlertTriangle,
 } from './icons';
 
 const ICONS = {
@@ -33,6 +35,11 @@ const ICONS = {
   heading: IconHeading,
   list: IconListBullet,
   divider: IconMinus,
+  // template categories
+  assessment: IconActivity,
+  summary: IconFile,
+  complication: IconAlertTriangle,
+  medication: IconPill,
 };
 
 const SlashCommandList = forwardRef(function SlashCommandList(

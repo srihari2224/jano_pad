@@ -1,0 +1,419 @@
+/* ============================================================================
+   dark-page.css — turns the embedded notepad into a flush, full-page dark
+   "paper" that blends into the Capacities-style shell. Everything is scoped
+   under .cap-page__body so the notepad's original light theme is untouched
+   if reused elsewhere.
+   ========================================================================== */
+
+/* Body fills the remaining page height so the editor becomes the whole page. */
+.cap-page__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── Notepad shell: dark tokens + no white card chrome ─────────────────── */
+.cap-page__body .doctor-notepad {
+  /* flip the design tokens to a dark palette */
+  --np-white: #232327;
+  --np-bar-bg: transparent;
+  --np-border: #34343a;
+  --np-border-strong: #45454d;
+  --np-border-soft: #2e2e33;
+  --np-text: #ececed;
+  --np-text-soft: #d2d2d6;
+  --np-text-mute: #9a9aa0;
+  --np-text-faint: #6a6a72;
+  /* toolbar hover/active tints → translucent light on dark */
+  --np-purple-tint: rgba(229, 75, 75, 0.18);
+  --np-purple-tint-2: rgba(255, 255, 255, 0.06);
+
+  flex: 1;
+  min-height: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--np-text);
+}
+
+/* header / toolbar / status / footer: transparent bars with soft dividers */
+.cap-page__body .np-header,
+.cap-page__body .np-toolbar,
+.cap-page__body .np-statusbar,
+.cap-page__body .np-footer {
+  background: transparent;
+}
+.cap-page__body .np-toolbar {
+  border-color: var(--np-border-soft);
+}
+.cap-page__body .np-statusbar,
+.cap-page__body .np-footer {
+  border-top-color: var(--np-border-soft);
+}
+
+/* the editor itself = the full-height dark paper */
+.cap-page__body .np-editor-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: transparent;
+}
+.cap-page__body .ProseMirror {
+  color: var(--np-text-soft);
+  min-height: 100%;
+}
+
+/* Templates button + icon buttons on dark */
+.cap-page__body .np-templates-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--np-border);
+  color: var(--np-text-soft);
+}
+.cap-page__body .np-templates-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+.cap-page__body .np-icon-btn {
+  color: var(--np-text-mute);
+}
+.cap-page__body .np-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--np-text);
+}
+
+/* toolbar select (block type) + colour wells */
+.cap-page__body .tb-select {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--np-border);
+  color: var(--np-text-soft);
+}
+
+/* Cancel button: transparent on dark (was hardcoded #fff) */
+.cap-page__body .np-btn-cancel {
+  background: transparent;
+  color: #f0a0a0;
+}
+
+/* draft "saved" text: lighten for dark contrast */
+.cap-page__body .np-statusbar__draft.is-saved {
+  color: #34d399;
+}
+
+/* in-document dropdown menus (templates / shortcuts) — dark surfaces */
+.cap-page__body .np-template-menu,
+.cap-page__body .np-moremenu {
+  background: #2a2a2e;
+  border: 1px solid var(--np-border);
+  color: var(--np-text);
+}
+.cap-page__body .np-template-menu__row:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.cap-page__body .np-template-menu__name {
+  color: var(--np-text);
+}
+.cap-page__body .np-template-menu__desc,
+.cap-page__body .np-moremenu__key {
+  color: var(--np-text-mute);
+}
+
+/* the "free notes" divider */
+.cap-page__body .np-free-notes-divider {
+  color: var(--np-text-faint);
+}
+.cap-page__body .np-free-notes-divider::before,
+.cap-page__body .np-free-notes-divider::after {
+  background: var(--np-border-soft);
+}
+
+/* ── Template cards (Tailwind) on dark ─────────────────────────────────── */
+.cap-page__body .jano-tw .bg-white {
+  background: #26262b;
+}
+.cap-page__body .jano-tw .border-slate-200 {
+  border-color: #3a3a40;
+}
+.cap-page__body .jano-tw .border-slate-100 {
+  border-color: #313137;
+}
+.cap-page__body .jano-tw .border-slate-50 {
+  border-color: #2b2b30;
+}
+.cap-page__body .jano-tw .divide-slate-50 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2b2b30;
+}
+.cap-page__body .jano-tw .text-slate-800 {
+  color: #ececed;
+}
+.cap-page__body .jano-tw .text-slate-700 {
+  color: #d2d2d6;
+}
+.cap-page__body .jano-tw .text-slate-500 {
+  color: #9a9aa0;
+}
+.cap-page__body .jano-tw .text-slate-400 {
+  color: #7a7a80;
+}
+.cap-page__body .jano-tw .hover\:bg-slate-50:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.cap-page__body .jano-tw .bg-slate-50\/30 {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* template field inputs (custom component classes) */
+.cap-page__body .jano-tw .digit-box {
+  background: #2c2c31;
+  border-color: #3f3f47;
+  color: #ececed;
+}
+.cap-page__body .jano-tw .digit-box:focus {
+  border-color: #c9b88f;
+}
+.cap-page__body .jano-tw .digit-box.is-filled {
+  background: #2c2c31;
+  border-color: #5b5b64;
+  color: #f3ede0;
+}
+.cap-page__body .jano-tw .digit-sep {
+  color: #7a7a80;
+}
+.cap-page__body .jano-tw .field-label {
+  color: #cfcfd4;
+}
+.cap-page__body .jano-tw .field-unit {
+  color: #87878d;
+}
+
+/* Chips: borderless muted by default, warm cream pill when selected. */
+.cap-page__body .jano-tw .chip {
+  background: transparent;
+  border-color: transparent;
+  color: #8b8b91;
+}
+.cap-page__body .jano-tw .chip:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #cfcfd4;
+}
+.cap-page__body .jano-tw .chip.is-selected,
+.cap-page__body .jano-tw .chip.is-selected:hover {
+  background: #ece4d4;
+  border-color: #ece4d4;
+  color: #2c2822;
+}
+
+.cap-page__body .jano-tw .text-field {
+  background: #2c2c31;
+  border-color: #3f3f47;
+  color: #ececed;
+}
+.cap-page__body .jano-tw .text-field:focus {
+  border-color: #c9b88f;
+}
+
+/* Category badge → warm cream pill with amber-brown text (any accent). */
+.cap-page__body .jano-tw .bg-blue-50,
+.cap-page__body .jano-tw .bg-amber-50,
+.cap-page__body .jano-tw .bg-violet-50,
+.cap-page__body .jano-tw .bg-cyan-50,
+.cap-page__body .jano-tw .bg-emerald-50 {
+  background: #ece4d4;
+}
+.cap-page__body .jano-tw .text-blue-700,
+.cap-page__body .jano-tw .text-amber-700,
+.cap-page__body .jano-tw .text-violet-700,
+.cap-page__body .jano-tw .text-cyan-700,
+.cap-page__body .jano-tw .text-emerald-700 {
+  color: #8a6a37;
+}
+.cap-page__body .jano-tw .border-blue-100,
+.cap-page__body .jano-tw .border-amber-100,
+.cap-page__body .jano-tw .border-violet-100,
+.cap-page__body .jano-tw .border-cyan-100,
+.cap-page__body .jano-tw .border-emerald-100 {
+  border-color: transparent;
+}
+
+/* ── Vitals table (inside the editor) on dark ──────────────────────────── */
+.cap-page__body .ProseMirror table.np-vitals-table th {
+  background: #2c2c31;
+  color: #cfcfd4;
+  border-bottom-color: #3f3f47;
+}
+.cap-page__body .ProseMirror table.np-vitals-table td {
+  border-bottom-color: #2e2e33;
+  color: #ececed;
+}
+.cap-page__body .ProseMirror table.np-vitals-table td:nth-child(2) {
+  color: #f3ede0;
+}
+.cap-page__body .ProseMirror table.np-vitals-table .selectedCell {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* ════════════════════════════════════════════════════════════════════════
+   GLOBAL (portal'd to <body>) — slash / mention popups + selection AI bubble.
+   These render outside .cap-page__body via Tippy, so the rules are not scoped.
+   The whole app is dark, so global dark styling is safe.
+   ════════════════════════════════════════════════════════════════════════ */
+/* `body ` prefix raises specificity above notepad.css (which loads later).
+   Warm palette to match the prose template notes. */
+body .np-popup {
+  background: #1f1e1d;
+  border-color: #34332f;
+  border-radius: 12px;
+  box-shadow: 0 18px 44px -16px rgba(0, 0, 0, 0.75);
+}
+body .np-popup__header {
+  background: #1f1e1d;
+  border-bottom-color: #34332f;
+}
+body .np-popup__header-badge {
+  background: rgba(232, 115, 107, 0.14);
+  color: #e8736b;
+}
+body .np-popup__header-label {
+  color: #b6b3aa;
+}
+body .np-popup__header-hint,
+body .np-popup__group-label {
+  color: #6a6862;
+}
+body .np-popup__group-label::after,
+body .np-popup__group-divider {
+  background: #34332f;
+}
+body .np-popup__empty {
+  color: #8b8980;
+}
+body .np-item__title {
+  color: #eceae3;
+}
+body .np-item__desc {
+  color: #8b8980;
+  text-transform: capitalize;
+}
+body .np-item:hover {
+  background: #262624;
+}
+body .np-item.is-selected {
+  background: rgba(232, 115, 107, 0.10);
+}
+body .np-item.is-selected::before {
+  background: #e8736b;
+}
+body .np-item__dose {
+  background: rgba(169, 216, 134, 0.13);
+  color: #a9d886;
+  border-color: rgba(169, 216, 134, 0.3);
+}
+
+/* coloured icon squares — warm washes + stroke icon, per type / category */
+body .np-item__icon {
+  border: none;
+}
+body .np-ic--medicine,
+body .np-ic--summary { background: rgba(169, 216, 134, 0.14); color: #a9d886; }
+body .np-ic--diagnosis,
+body .np-ic--complication { background: rgba(232, 115, 107, 0.14); color: #e8736b; }
+body .np-ic--labtest,
+body .np-ic--vitals,
+body .np-ic--dosage { background: rgba(227, 180, 104, 0.16); color: #e3b468; }
+body .np-ic--date { background: rgba(127, 217, 190, 0.14); color: #7fd9be; }
+body .np-ic--assessment { background: rgba(110, 168, 232, 0.16); color: #6ea8e8; }
+body .np-ic--medication { background: rgba(184, 154, 224, 0.18); color: #b89ae0; }
+body .np-ic--heading,
+body .np-ic--list,
+body .np-ic--divider { background: #2c2b29; color: #b6b3aa; }
+
+/* Selection bubble — formatting bar + AI dropdown */
+.np-sel-ai {
+  position: fixed;
+  z-index: 3000;
+  transform: translate(-50%, calc(-100% - 8px));
+  background: #2a2a2e;
+  border: 1px solid #3a3a40;
+  border-radius: 9px;
+  box-shadow: 0 10px 28px -8px rgba(0, 0, 0, 0.7);
+  overflow: hidden;
+  font-family: 'Figtree', sans-serif;
+  display: flex;
+  flex-direction: column;
+}
+.np-sel-bar {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 5px;
+}
+.np-sel-bar__div {
+  width: 1px;
+  height: 18px;
+  margin: 0 4px;
+  background: #3f3f47;
+}
+.np-sel-fmt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #c8c8cd;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+  transition: background 0.12s, color 0.12s;
+}
+.np-sel-fmt:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+.np-sel-fmt.is-active {
+  background: rgba(229, 75, 75, 0.22);
+  color: #f2a3a3;
+}
+.np-sel-ai__btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 11px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: linear-gradient(135deg, #e54b4b, #d53838);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+}
+.np-sel-ai__btn:hover,
+.np-sel-ai__btn.is-open {
+  background: linear-gradient(135deg, #ef5a5a, #e54b4b);
+}
+.np-sel-ai__menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  border-top: 1px solid #3a3a40;
+  padding: 4px;
+}
+.np-sel-ai__action {
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #d2d2d6;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.np-sel-ai__action:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}

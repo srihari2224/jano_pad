@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Scope: Tailwind utilities here apply to .jano-tw wrapper and below.
+   Custom components scoped under .jano-tw so we don't accidentally style
+   the surrounding non-Tailwind notepad UI. */
+
+@layer components {
+  .jano-tw .digit-box {
+    @apply w-9 h-10 text-center text-base font-semibold rounded-md
+           border border-slate-300 bg-white text-slate-900
+           outline-none transition;
+  }
+  .jano-tw .digit-box:focus {
+    @apply border-blue-500 ring-2 ring-blue-100;
+  }
+  .jano-tw .digit-box.is-filled {
+    @apply border-emerald-400 bg-emerald-50 text-emerald-900;
+  }
+  .jano-tw .digit-sep {
+    @apply text-slate-400 font-semibold px-0.5 select-none;
+  }
+  .jano-tw .field-label {
+    @apply text-sm font-medium text-slate-700;
+  }
+  .jano-tw .field-unit {
+    @apply text-xs font-medium text-slate-500 self-center pl-1;
+  }
+  .jano-tw .chip {
+    @apply px-3 py-1 rounded-full text-xs font-medium border cursor-pointer transition select-none
+           border-slate-300 text-slate-700 bg-white hover:bg-slate-50;
+  }
+  .jano-tw .chip.is-selected {
+    @apply bg-blue-600 text-white border-blue-600 hover:bg-blue-700;
+  }
+  .jano-tw .text-field {
+    @apply w-full px-3 py-1.5 text-sm rounded-md border border-slate-300 outline-none
+           focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition;
+  }
+}
