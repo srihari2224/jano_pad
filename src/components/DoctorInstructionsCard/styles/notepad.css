@@ -494,8 +494,12 @@
   text-decoration: underline;
 }
 
-/* selected atom node (chip) outline */
-.doctor-notepad .ProseMirror .ProseMirror-selectednode {
+/* selected atom node (chip) outline — exclude template blocks.
+   TipTap's ReactNodeViewRenderer wraps the node in `.react-renderer
+   .node-templateBlock`, and ProseMirror applies `.ProseMirror-selectednode`
+   to THAT wrapper (not the inner [data-template-block] div), so the exclusion
+   must target the wrapper class. */
+.doctor-notepad .ProseMirror .ProseMirror-selectednode:not(.node-templateBlock) {
   outline: 2px solid var(--np-violet);
   outline-offset: 1px;
   border-radius: var(--np-radius-pill);

@@ -1,4 +1,3 @@
-import './App.css';
 import PageShell from './components/PageShell/PageShell';
 import DoctorInstructionsCard from './components/DoctorInstructionsCard';
 
