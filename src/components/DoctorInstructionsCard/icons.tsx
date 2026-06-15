@@ -5,7 +5,15 @@
  * round caps/joins. `size` and `strokeWidth` are props.
  */
 
-function Svg({ size = 16, strokeWidth = 1.8, children }) {
+import type React from 'react';
+
+type IconProps = { size?: number; strokeWidth?: number };
+
+function Svg({
+  size = 16,
+  strokeWidth = 1.8,
+  children,
+}: IconProps & { children: React.ReactNode }) {
   return (
     <svg
       width={size}
@@ -25,7 +33,7 @@ function Svg({ size = 16, strokeWidth = 1.8, children }) {
 
 /* ---- Header ---------------------------------------------------------- */
 
-export function IconPencil(props) {
+export function IconPencil(props: IconProps) {
   return (
     <Svg {...props}>
       <path d="M12 20h9" />
@@ -33,7 +41,7 @@ export function IconPencil(props) {
     </Svg>
   );
 }
-export function IconMaximize(props) {
+export function IconMaximize(props: IconProps) {
   return (
     <Svg {...props}>
       <path d="M8 3H5a2 2 0 0 0-2 2v3" />
@@ -43,7 +51,7 @@ export function IconMaximize(props) {
     </Svg>
   );
 }
-export function IconMinimize(props) {
+export function IconMinimize(props: IconProps) {
   return (
     <Svg {...props}>
       <path d="M8 3v3a2 2 0 0 1-2 2H3" />
@@ -53,7 +61,7 @@ export function IconMinimize(props) {
     </Svg>
   );
 }
-export function IconMoreVertical(props) {
+export function IconMoreVertical(props: IconProps) {
   return (
     <Svg {...props}>
       <circle cx="12" cy="5" r="1.4" fill="currentColor" stroke="none" />
@@ -62,7 +70,7 @@ export function IconMoreVertical(props) {
     </Svg>
   );
 }
-export function IconSave(props) {
+export function IconSave(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z" />
@@ -74,7 +82,7 @@ export function IconSave(props) {
 
 /* ---- Toolbar (strokeWidth 2) ----------------------------------------- */
 
-export function IconUndo(props) {
+export function IconUndo(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M3 7v6h6" />
@@ -82,7 +90,7 @@ export function IconUndo(props) {
     </Svg>
   );
 }
-export function IconRedo(props) {
+export function IconRedo(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M21 7v6h-6" />
@@ -90,7 +98,7 @@ export function IconRedo(props) {
     </Svg>
   );
 }
-export function IconListBullet(props) {
+export function IconListBullet(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <line x1="9" y1="6" x2="20" y2="6" />
@@ -102,7 +110,7 @@ export function IconListBullet(props) {
     </Svg>
   );
 }
-export function IconListOrdered(props) {
+export function IconListOrdered(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <line x1="10" y1="6" x2="20" y2="6" />
@@ -113,7 +121,7 @@ export function IconListOrdered(props) {
     </Svg>
   );
 }
-export function IconAlignLeft(props) {
+export function IconAlignLeft(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <line x1="3" y1="6" x2="18" y2="6" />
@@ -122,7 +130,7 @@ export function IconAlignLeft(props) {
     </Svg>
   );
 }
-export function IconAlignCenter(props) {
+export function IconAlignCenter(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <line x1="4" y1="6" x2="20" y2="6" />
@@ -131,7 +139,7 @@ export function IconAlignCenter(props) {
     </Svg>
   );
 }
-export function IconAlignRight(props) {
+export function IconAlignRight(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <line x1="6" y1="6" x2="21" y2="6" />
@@ -140,7 +148,7 @@ export function IconAlignRight(props) {
     </Svg>
   );
 }
-export function IconClearFormat(props) {
+export function IconClearFormat(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M4 7V4h16v3" />
@@ -154,7 +162,7 @@ export function IconClearFormat(props) {
 
 /* ---- Slash command icons (strokeWidth 2) ----------------------------- */
 
-export function IconHeading(props) {
+export function IconHeading(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M6 4v16" />
@@ -163,7 +171,7 @@ export function IconHeading(props) {
     </Svg>
   );
 }
-export function IconPill(props) {
+export function IconPill(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" />
@@ -171,7 +179,7 @@ export function IconPill(props) {
     </Svg>
   );
 }
-export function IconClipboard(props) {
+export function IconClipboard(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <rect x="8" y="2" width="8" height="4" rx="1" />
@@ -181,7 +189,7 @@ export function IconClipboard(props) {
     </Svg>
   );
 }
-export function IconFile(props) {
+export function IconFile(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
@@ -191,14 +199,14 @@ export function IconFile(props) {
     </Svg>
   );
 }
-export function IconActivity(props) {
+export function IconActivity(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </Svg>
   );
 }
-export function IconFlask(props) {
+export function IconFlask(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M9 3h6" />
@@ -207,7 +215,16 @@ export function IconFlask(props) {
     </Svg>
   );
 }
-export function IconSyringe(props) {
+export function IconAlertTriangle(props: IconProps) {
+  return (
+    <Svg strokeWidth={2} {...props}>
+      <path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </Svg>
+  );
+}
+export function IconSyringe(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="m18 2 4 4" />
@@ -218,7 +235,7 @@ export function IconSyringe(props) {
     </Svg>
   );
 }
-export function IconCalendar(props) {
+export function IconCalendar(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <rect x="3" y="4" width="18" height="18" rx="2" />
@@ -226,7 +243,7 @@ export function IconCalendar(props) {
     </Svg>
   );
 }
-export function IconMinus(props) {
+export function IconMinus(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <line x1="5" y1="12" x2="19" y2="12" />
@@ -236,14 +253,14 @@ export function IconMinus(props) {
 
 /* ---- Status / misc --------------------------------------------------- */
 
-export function IconCheck(props) {
+export function IconCheck(props: IconProps) {
   return (
     <Svg strokeWidth={2.5} {...props}>
       <path d="M20 6 9 17l-5-5" />
     </Svg>
   );
 }
-export function IconSpinner(props) {
+export function IconSpinner(props: IconProps) {
   return (
     <svg
       width={props.size || 14}
@@ -260,7 +277,7 @@ export function IconSpinner(props) {
     </svg>
   );
 }
-export function IconKeyboard(props) {
+export function IconKeyboard(props: IconProps) {
   return (
     <Svg strokeWidth={1.8} {...props}>
       <rect x="2" y="6" width="20" height="12" rx="2" />
@@ -268,14 +285,14 @@ export function IconKeyboard(props) {
     </Svg>
   );
 }
-export function IconClose(props) {
+export function IconClose(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M18 6 6 18M6 6l12 12" />
     </Svg>
   );
 }
-export function IconSparkles(props) {
+export function IconSparkles(props: IconProps) {
   return (
     <Svg strokeWidth={2} {...props}>
       <path d="M12 3l1.9 4.7L18.5 9.5l-4.6 1.8L12 16l-1.9-4.7L5.5 9.5l4.6-1.8z" />
@@ -283,10 +300,27 @@ export function IconSparkles(props) {
     </Svg>
   );
 }
-export function IconChevron(props) {
+export function IconChevron(props: IconProps) {
   return (
     <Svg strokeWidth={2.5} {...props}>
       <path d="M6 9l6 6 6-6" />
+    </Svg>
+  );
+}
+export function IconPlus(props: IconProps) {
+  return (
+    <Svg strokeWidth={2.2} {...props}>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </Svg>
+  );
+}
+export function IconTemplatePlus(props: IconProps) {
+  return (
+    <Svg strokeWidth={2} {...props}>
+      <path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h7" />
+      <path d="M14 3v5h5" />
+      <path d="M18 14v6M15 17h6" />
     </Svg>
   );
 }

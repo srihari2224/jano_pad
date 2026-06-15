@@ -6,9 +6,9 @@
  * note stays a permanent record even if the source data later changes.
  */
 import Mention from '@tiptap/extension-mention';
-import { getInitials, ageYears } from '../utils';
+import { getInitials, ageYears } from '../../utils';
 
-export function buildMentionExtension({ items, render }) {
+export function buildMentionExtension({ items, render }: { items: any; render: any }) {
   return Mention.extend({
     name: 'mention',
 
@@ -22,14 +22,14 @@ export function buildMentionExtension({ items, render }) {
     },
 
     // Plain-text representation for editor.getText() / word count.
-    renderText({ node }) {
+    renderText({ node }: { node: any }) {
       return `@${node.attrs.label || ''}`;
     },
   }).configure({
     HTMLAttributes: { class: 'np-chip' },
 
     // Full control over how a chip renders inside the document.
-    renderHTML({ node }) {
+    renderHTML({ node }: { node: any }) {
       const type = node.attrs.mentionType || 'patient';
       const snap = node.attrs.snapshot || {};
       const name = snap.name || node.attrs.label || '';
@@ -60,7 +60,7 @@ export function buildMentionExtension({ items, render }) {
       items,
       render,
       // `props` is the selected mention object from searchMentions().
-      command: ({ editor, range, props }) => {
+      command: ({ editor, range, props }: any) => {
         editor
           .chain()
           .focus()

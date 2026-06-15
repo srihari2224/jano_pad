@@ -1,0 +1,281 @@
+/* ============================================================================
+   pageshell.css — Capacities-style dark document workspace
+   ========================================================================== */
+
+.cap-root {
+  --cap-bg: #1b1b1d;
+  --cap-panel: #242426;
+  --cap-panel-2: #2c2c2f;
+  --cap-border: #34343a;
+  --cap-text: #ececed;
+  --cap-text-dim: #9a9aa0;
+  --cap-text-faint: #5d5d63;
+  --cap-accent: #3b82f6;
+
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--cap-bg);
+  color: var(--cap-text);
+  font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+.cap-root *,
+.cap-root *::before,
+.cap-root *::after {
+  box-sizing: border-box;
+}
+
+/* ── TOP BAR ─────────────────────────────────────────────── */
+.cap-topbar {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 620px) 1fr;
+  align-items: center;
+  height: 48px;
+  padding: 0 14px;
+  flex-shrink: 0;
+}
+.cap-topbar__left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cap-topbar__search {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 9px;
+  background: var(--cap-panel);
+  color: var(--cap-text-dim);
+  font-size: 13px;
+  cursor: text;
+  transition: background 0.15s;
+}
+.cap-topbar__search:hover {
+  background: var(--cap-panel-2);
+}
+.cap-topbar__search-text {
+  color: var(--cap-text-dim);
+}
+
+/* ── BODY (sidebar + content) ────────────────────────────── */
+.cap-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* ── SIDEBAR ─────────────────────────────────────────────── */
+.cap-sidebar {
+  position: relative;
+  width: 300px;
+  min-width: 0;
+  flex-shrink: 0;
+  padding: 6px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.2s ease, opacity 0.2s ease, padding 0.2s ease;
+  overflow: hidden;
+}
+
+.cap-sidebar__doc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 16px;
+}
+.cap-sidebar__doc-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  background: var(--cap-panel);
+  color: var(--cap-text-dim);
+  flex-shrink: 0;
+}
+.cap-sidebar__doc-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cap-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cap-sidebar__tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px 18px;
+}
+.cap-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 30px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cap-text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.cap-tab:hover {
+  background: var(--cap-panel);
+  color: var(--cap-text);
+}
+.cap-tab.is-active {
+  background: var(--cap-panel-2);
+  color: var(--cap-text);
+}
+
+.cap-sidebar__section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  margin-bottom: 12px;
+}
+.cap-sidebar__section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cap-text);
+}
+
+.cap-sidebar__empty {
+  margin: 0;
+  padding: 0 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--cap-text-faint);
+}
+
+.cap-sidebar__fabs {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 6px 0;
+}
+.cap-fab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: var(--cap-panel);
+  color: var(--cap-text-dim);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+.cap-fab:hover {
+  background: var(--cap-panel-2);
+  color: var(--cap-text);
+}
+.cap-fab:active {
+  transform: scale(0.94);
+}
+.cap-fab--primary {
+  background: var(--cap-accent);
+  color: #fff;
+}
+.cap-fab--primary:hover {
+  background: #2f6fe0;
+  color: #fff;
+}
+
+/* ── ICON BUTTONS (top bar) ──────────────────────────────── */
+.cap-iconbtn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  height: 32px;
+  min-width: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--cap-text-dim);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.cap-iconbtn:hover {
+  background: var(--cap-panel);
+  color: var(--cap-text);
+}
+.cap-iconbtn--sm {
+  height: 26px;
+  min-width: 26px;
+  padding: 0 4px;
+}
+
+/* ── CONTENT ─────────────────────────────────────────────── */
+.cap-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--cap-panel);
+  border-top-left-radius: 14px;
+  border-left: 1px solid var(--cap-border);
+  border-top: 1px solid var(--cap-border);
+  overflow-y: auto;
+}
+.cap-root--collapsed .cap-content {
+  border-top-left-radius: 0;
+}
+
+.cap-page {
+  width: 100%;
+  max-width: 820px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 48px 40px 0;
+}
+
+.cap-page__title {
+  width: 100%;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--cap-text);
+  font-family: inherit;
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  padding: 0;
+  margin-bottom: 28px;
+}
+.cap-page__title::placeholder {
+  color: var(--cap-text-faint);
+}
+
+.cap-page__body {
+  /* the embedded notepad/editor sits here */
+}
+
+/* Scrollbar to match the dark theme */
+.cap-content::-webkit-scrollbar {
+  width: 12px;
+}
+.cap-content::-webkit-scrollbar-thumb {
+  background: #3a3a40;
+  border: 3px solid var(--cap-panel);
+  border-radius: 10px;
+}
+.cap-content::-webkit-scrollbar-thumb:hover {
+  background: #48484f;
+}

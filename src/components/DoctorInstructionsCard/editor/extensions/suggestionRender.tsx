@@ -6,13 +6,13 @@
 import { ReactRenderer } from '@tiptap/react';
 import tippy from 'tippy.js';
 
-export function makeSuggestionRender(Component) {
+export function makeSuggestionRender(Component: any) {
   return () => {
-    let component;
-    let popup;
+    let component: any;
+    let popup: any;
 
     return {
-      onStart: (props) => {
+      onStart: (props: any) => {
         component = new ReactRenderer(Component, {
           props,
           editor: props.editor,
@@ -33,14 +33,14 @@ export function makeSuggestionRender(Component) {
         });
       },
 
-      onUpdate: (props) => {
+      onUpdate: (props: any) => {
         component.updateProps(props);
         if (props.clientRect && popup && popup[0]) {
           popup[0].setProps({ getReferenceClientRect: props.clientRect });
         }
       },
 
-      onKeyDown: (props) => {
+      onKeyDown: (props: any) => {
         if (props.event.key === 'Escape') {
           if (popup && popup[0]) popup[0].hide();
           return true;

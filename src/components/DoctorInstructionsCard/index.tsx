@@ -14,19 +14,24 @@
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import DoctorNotePad from './DoctorNotePad';
+import type { Draft } from '../../types';
 
-export default function DoctorInstructionsCard({ patientId = 'pat001' }) {
+export default function DoctorInstructionsCard({
+  patientId = 'pat001',
+}: {
+  patientId?: string;
+}) {
   useEffect(() => {
     Sentry.setUser({ id: patientId });
     return () => Sentry.setUser(null);
   }, [patientId]);
-  // The last persisted note, as TipTap JSON. null = nothing saved yet.
-  const [savedNote, setSavedNote] = useState(null);
+  // The last persisted draft: { version: 2, editor: TipTapJSON, templates: [...] }
+  const [savedNote, setSavedNote] = useState<Draft | null>(null);
 
-  const handleSave = (json) => {
-    setSavedNote(json);
+  const handleSave = (draft: any) => {
+    setSavedNote(draft);
     // eslint-disable-next-line no-console
-    console.log('[DoctorInstructionsCard] saved note (TipTap JSON):', json);
+    console.log('[DoctorInstructionsCard] saved draft:', draft);
   };
 
   const handleCancel = () => {
@@ -37,7 +42,7 @@ export default function DoctorInstructionsCard({ patientId = 'pat001' }) {
   return (
     <DoctorNotePad
       patientId={patientId}
-      initialContent={savedNote}
+      initialContent={savedNote?.editor || null}
       onSave={handleSave}
       onCancel={handleCancel}
     />

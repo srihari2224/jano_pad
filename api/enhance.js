@@ -55,6 +55,21 @@ Rules:
 - Only include terms actually present in the note. Do not invent terms.
 - If no medical terms are found, reply exactly: "No medical terms found in the note."
 - Return ONLY the list, with no preamble, heading or commentary.`,
+
+  template: `You are a clinical template builder. Convert the clinician's note into a REUSABLE TEMPLATE by replacing every patient-specific or variable value with a named placeholder of the form {{VARIABLE_NAME}}.
+Replace with a placeholder:
+- vital signs (blood pressure, pulse, SpO2, temperature, weight, height, GRBS)
+- lab values and their numbers/units
+- medication names, doses, units, frequencies and routes
+- symptoms, durations, dates and times
+- any other measurement or value that would differ from one patient to the next.
+Rules:
+- Use SHORT UPPER_SNAKE_CASE names that describe the value, e.g. {{BP}}, {{PULSE}}, {{SPO2}}, {{TEMPERATURE}}, {{WEIGHT}}, {{MEDICATION}}, {{DOSAGE}}, {{ROUTE}}, {{SYMPTOM}}, {{DURATION}}, {{LAB_VALUE}}, {{DATE}}.
+- If the SAME value appears more than once, reuse the SAME placeholder name.
+- Keep ALL surrounding clinical wording, sentence structure, units, punctuation and line breaks EXACTLY as written — only swap the variable values for placeholders.
+- Do NOT invent new sentences, headings or fields that were not in the note.
+- Do NOT wrap the output in markdown code fences or add any commentary.
+- Return ONLY the template text.`,
 };
 
 /** Read and parse a JSON body — works whether or not the body is pre-parsed. */

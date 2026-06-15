@@ -8,16 +8,27 @@
  * -------------------------------------------------------------------------
  */
 import db from './db.json';
+import type {
+  PatientSnapshot,
+  DoctorSnapshot,
+  MentionSnapshot,
+  Medicine,
+  MedicineDoseRow,
+  Diagnosis,
+  LabTest,
+} from '../types';
 
 /* ------------------------------------------------------------------ */
 /* internal utilities                                                  */
 /* ------------------------------------------------------------------ */
 
 /** Lower-case a value safely (handles null/undefined/numbers). */
-const lc = (value) => (value == null ? '' : String(value).toLowerCase());
+const lc = (value: unknown): string =>
+  value == null ? '' : String(value).toLowerCase();
 
 /** Case-insensitive "includes" match. */
-const matches = (haystack, query) => lc(haystack).includes(lc(query).trim());
+const matches = (haystack: unknown, query: unknown): boolean =>
+  lc(haystack).includes(lc(query).trim());
 
 /* ------------------------------------------------------------------ */
 /* normalizers — shape entities into a consistent form for the editor  */
@@ -27,7 +38,7 @@ const matches = (haystack, query) => lc(haystack).includes(lc(query).trim());
  * Patient → mention object. This is the exact snapshot stored inside a
  * patient mention chip's node attributes at insertion time.
  */
-function normalizePatient(p) {
+function normalizePatient(p: any): PatientSnapshot {
   return {
     type: 'patient',
     id: p.id,
@@ -51,7 +62,7 @@ function normalizePatient(p) {
 /**
  * Doctor → mention object. Snapshot stored inside a doctor mention chip.
  */
-function normalizeDoctor(d) {
+function normalizeDoctor(d: any): DoctorSnapshot {
   return {
     type: 'doctor',
     id: d.id,
@@ -82,7 +93,7 @@ function normalizeDoctor(d) {
  * @param {string} query
  * @returns {Array} normalized patient/doctor objects (see normalizers above)
  */
-export function searchMentions(query) {
+export function searchMentions(query: string): MentionSnapshot[] {
   const q = (query || '').trim();
   const doctorsOnly = lc(q).startsWith('dr');
 
@@ -118,7 +129,7 @@ export function searchMentions(query) {
  * searchMedicines(query) — match medicines by name or category.
  * @returns {Array} raw medicine records: { id, name, category, dosageForms, commonDoses }
  */
-export function searchMedicines(query) {
+export function searchMedicines(query: string): Medicine[] {
   const q = (query || '').trim();
   if (!q) return db.medicines.slice();
   return db.medicines.filter(
@@ -137,9 +148,9 @@ export function searchMedicines(query) {
  *
  * @returns {Array} rows: { medId, name, category, dosageForms, dose }
  */
-export function searchMedicineDoses(query) {
+export function searchMedicineDoses(query: string): MedicineDoseRow[] {
   const words = lc(query).trim().split(/\s+/).filter(Boolean);
-  const rows = [];
+  const rows: MedicineDoseRow[] = [];
   for (const m of db.medicines) {
     const doses = m.commonDoses && m.commonDoses.length ? m.commonDoses : [''];
     for (const dose of doses) {
@@ -162,7 +173,7 @@ export function searchMedicineDoses(query) {
  * searchDiagnoses(query) — match diagnoses by name or ICD code.
  * @returns {Array} raw diagnosis records: { id, name, icd, category }
  */
-export function searchDiagnoses(query) {
+export function searchDiagnoses(query: string): Diagnosis[] {
   const q = (query || '').trim();
   if (!q) return db.diagnoses.slice();
   return db.diagnoses.filter(
@@ -174,7 +185,7 @@ export function searchDiagnoses(query) {
  * searchLabTests(query) — match lab tests by name or category.
  * @returns {Array} raw lab test records: { id, name, category, turnaround }
  */
-export function searchLabTests(query) {
+export function searchLabTests(query: string): LabTest[] {
   const q = (query || '').trim();
   if (!q) return db.labTests.slice();
   return db.labTests.filter(
@@ -184,18 +195,11 @@ export function searchLabTests(query) {
 
 /**
  * getAllTemplates() — every notepad template.
- * Normalized to { id, title, description, content } for the /template list.
- * `content` is plain text; newlines become separate paragraphs on insert.
- * @returns {Array}
+ * Re-exports from src/data/templates.js (structured templates).
+ * Each item: { id, title, description, template }.
  */
-export function getAllTemplates() {
-  return db.notepadTemplates.map((t) => ({
-    id: t.id,
-    title: t.name,
-    description: t.category,
-    content: t.content,
-  }));
-}
+import { getAllTemplates } from './templates';
+export { getAllTemplates };
 
 /* ------------------------------------------------------------------ */
 /* single-record lookups                                               */
@@ -204,7 +208,7 @@ export function getAllTemplates() {
 /**
  * getPatientById(id) — single normalized patient, or null.
  */
-export function getPatientById(id) {
+export function getPatientById(id: string): PatientSnapshot | null {
   const p = db.patients.find((x) => x.id === id);
   return p ? normalizePatient(p) : null;
 }
@@ -212,7 +216,7 @@ export function getPatientById(id) {
 /**
  * getDoctorById(id) — single normalized doctor, or null.
  */
-export function getDoctorById(id) {
+export function getDoctorById(id: string): DoctorSnapshot | null {
   const d = db.doctors.find((x) => x.id === id);
   return d ? normalizeDoctor(d) : null;
 }

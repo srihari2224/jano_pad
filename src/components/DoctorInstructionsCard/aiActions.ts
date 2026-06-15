@@ -11,8 +11,10 @@
  * @returns {Promise<string>} the AI result text
  * @throws {Error} with a user-facing message on failure
  */
-export async function runAiAction(text, action) {
-  let res;
+import type { AiAction } from '../../types';
+
+export async function runAiAction(text: string, action: AiAction): Promise<string> {
+  let res: Response;
   try {
     res = await fetch('/api/enhance', {
       method: 'POST',
@@ -23,7 +25,7 @@ export async function runAiAction(text, action) {
     throw new Error('Could not reach the AI service. Check your connection.');
   }
 
-  let data = {};
+  let data: { result?: string; error?: string } = {};
   try {
     data = await res.json();
   } catch {

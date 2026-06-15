@@ -4,8 +4,13 @@
  * note was written. Two layouts: patient and doctor.
  */
 import { getInitials, ageYears, prettyDate, statusBadgeClass } from './utils';
+import type {
+  MentionSnapshot,
+  PatientSnapshot,
+  DoctorSnapshot,
+} from '../../types';
 
-const STATUS_LABEL = {
+const STATUS_LABEL: Record<string, string> = {
   ACTIVE: 'Active',
   CRITICAL: 'Critical',
   ADMITTED: 'Admitted',
@@ -13,7 +18,7 @@ const STATUS_LABEL = {
   DISCHARGED: 'Discharged',
 };
 
-function Row({ label, value }) {
+function Row({ label, value }: { label: React.ReactNode; value: React.ReactNode }) {
   return (
     <div className="np-popover__row">
       <span className="np-popover__label">{label}</span>
@@ -22,13 +27,21 @@ function Row({ label, value }) {
   );
 }
 
-function PillBlock({ label, items, variant }) {
+function PillBlock({
+  label,
+  items,
+  variant,
+}: {
+  label: string;
+  items?: string[];
+  variant: string;
+}) {
   if (!items || items.length === 0) return null;
   return (
     <div className="np-popover__block">
       <div className="np-popover__block-label">{label}</div>
       <div className="np-popover__pills">
-        {items.map((it, i) => (
+        {items.map((it: string, i: number) => (
           <span key={i} className={`np-pill np-pill--${variant}`}>
             {it}
           </span>
@@ -38,7 +51,7 @@ function PillBlock({ label, items, variant }) {
   );
 }
 
-function PatientPopover({ data }) {
+function PatientPopover({ data }: { data: PatientSnapshot }) {
   return (
     <>
       <div className="np-popover__head">
@@ -52,7 +65,7 @@ function PatientPopover({ data }) {
       </div>
       <div className="np-popover__badges">
         <span className={`np-badge ${statusBadgeClass(data.status)}`}>
-          {STATUS_LABEL[data.status] || data.status}
+          {STATUS_LABEL[data.status as string] || data.status}
         </span>
       </div>
 
@@ -78,7 +91,7 @@ function PatientPopover({ data }) {
         <div className="np-popover__block">
           <div className="np-popover__block-label">Current medications</div>
           <ul className="np-popover__meds-list np-popover__meds">
-            {data.currentMedications.map((m, i) => (
+            {data.currentMedications.map((m: string, i: number) => (
               <li key={i}>{m}</li>
             ))}
           </ul>
@@ -92,7 +105,7 @@ function PatientPopover({ data }) {
   );
 }
 
-function DoctorPopover({ data }) {
+function DoctorPopover({ data }: { data: DoctorSnapshot }) {
   return (
     <>
       <div className="np-popover__head">
@@ -135,7 +148,7 @@ function DoctorPopover({ data }) {
   );
 }
 
-export default function MentionPopover({ data }) {
+export default function MentionPopover({ data }: { data: MentionSnapshot }) {
   if (!data) return null;
   return (
     <div className="np-popover" onMouseDown={(e) => e.stopPropagation()}>

@@ -22,9 +22,12 @@ import {
   IconHeading,
   IconListBullet,
   IconMinus,
+  IconFile,
+  IconAlertTriangle,
 } from './icons';
+import type { SlashItem } from '../../types';
 
-const ICONS = {
+const ICONS: Record<string, (props: { size?: number }) => React.JSX.Element> = {
   medicine: IconPill,
   diagnosis: IconClipboard,
   labtest: IconFlask,
@@ -33,14 +36,28 @@ const ICONS = {
   heading: IconHeading,
   list: IconListBullet,
   divider: IconMinus,
+  // template categories
+  assessment: IconActivity,
+  summary: IconFile,
+  complication: IconAlertTriangle,
+  medication: IconPill,
 };
 
-const SlashCommandList = forwardRef(function SlashCommandList(
-  { items, command },
-  ref,
-) {
+interface SlashCommandListHandle {
+  onKeyDown: (x: { event: KeyboardEvent }) => boolean;
+}
+
+interface SlashCommandListProps {
+  items: SlashItem[];
+  command: (item: SlashItem) => void;
+}
+
+const SlashCommandList = forwardRef<
+  SlashCommandListHandle,
+  SlashCommandListProps
+>(function SlashCommandList({ items, command }, ref) {
   const [selected, setSelected] = useState(0);
-  const listRef = useRef(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setSelected(0), [items]);
   useEffect(() => {
@@ -49,13 +66,13 @@ const SlashCommandList = forwardRef(function SlashCommandList(
       ?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
 
-  const pick = (index) => {
+  const pick = (index: number) => {
     const item = items[index];
     if (item) command(item);
   };
 
   useImperativeHandle(ref, () => ({
-    onKeyDown: ({ event }) => {
+    onKeyDown: ({ event }: { event: KeyboardEvent }) => {
       if (!items.length) return false;
       if (event.key === 'ArrowDown') {
         setSelected((s) => (s + 1) % items.length);
@@ -85,7 +102,7 @@ const SlashCommandList = forwardRef(function SlashCommandList(
     );
   }
 
-  let lastGroup = null;
+  let lastGroup: string | null = null;
 
   return (
     <div className="np-popup np-popup--slash" ref={listRef}>
@@ -95,7 +112,7 @@ const SlashCommandList = forwardRef(function SlashCommandList(
         <span className="np-popup__header-hint">↑↓ navigate · ↵ insert</span>
       </div>
       <div className="np-popup__items">
-        {items.map((item, i) => {
+        {items.map((item: SlashItem, i: number) => {
           const Icon = ICONS[item.iconKey];
           const showGroup = item.group !== lastGroup;
           lastGroup = item.group;

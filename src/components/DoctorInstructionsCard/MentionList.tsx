@@ -10,8 +10,9 @@ import {
   useState,
 } from 'react';
 import { getInitials, ageYears, statusBadgeClass } from './utils';
+import type { MentionSnapshot } from '../../types';
 
-const STATUS_LABEL = {
+const STATUS_LABEL: Record<string, string> = {
   ACTIVE: 'Active',
   CRITICAL: 'Critical',
   ADMITTED: 'Admitted',
@@ -19,9 +20,19 @@ const STATUS_LABEL = {
   DISCHARGED: 'Discharged',
 };
 
-const MentionList = forwardRef(function MentionList({ items, command }, ref) {
+interface MentionListHandle {
+  onKeyDown: (x: { event: KeyboardEvent }) => boolean;
+}
+
+interface MentionListProps {
+  items: MentionSnapshot[];
+  command: (item: MentionSnapshot) => void;
+}
+
+const MentionList = forwardRef<MentionListHandle, MentionListProps>(
+  function MentionList({ items, command }, ref) {
   const [selected, setSelected] = useState(0);
-  const listRef = useRef(null);
+  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setSelected(0), [items]);
   useEffect(() => {
@@ -30,13 +41,13 @@ const MentionList = forwardRef(function MentionList({ items, command }, ref) {
       ?.scrollIntoView({ block: 'nearest' });
   }, [selected]);
 
-  const pick = (index) => {
+  const pick = (index: number) => {
     const item = items[index];
     if (item) command(item);
   };
 
   useImperativeHandle(ref, () => ({
-    onKeyDown: ({ event }) => {
+    onKeyDown: ({ event }: { event: KeyboardEvent }) => {
       if (!items.length) return false;
       if (event.key === 'ArrowDown') {
         setSelected((s) => (s + 1) % items.length);
@@ -54,7 +65,7 @@ const MentionList = forwardRef(function MentionList({ items, command }, ref) {
     },
   }));
 
-  const renderItem = (item, globalIndex) => (
+  const renderItem = (item: MentionSnapshot, globalIndex: number) => (
     <button
       type="button"
       key={`${item.type}-${item.id}`}
@@ -73,7 +84,7 @@ const MentionList = forwardRef(function MentionList({ items, command }, ref) {
           {item.name}
           {item.type === 'patient' ? (
             <span className={`np-badge ${statusBadgeClass(item.status)}`}>
-              {STATUS_LABEL[item.status] || item.status}
+              {STATUS_LABEL[item.status as string] || item.status}
             </span>
           ) : item.isAvailableNow ? (
             <span className="np-badge np-badge--available">
@@ -105,8 +116,8 @@ const MentionList = forwardRef(function MentionList({ items, command }, ref) {
     );
   }
 
-  const patients = items.filter(it => it.type === 'patient');
-  const doctors  = items.filter(it => it.type === 'doctor');
+  const patients = items.filter((it) => it.type === 'patient');
+  const doctors  = items.filter((it) => it.type === 'doctor');
 
   return (
     <div className="np-popup np-popup--mention" ref={listRef}>
@@ -121,19 +132,20 @@ const MentionList = forwardRef(function MentionList({ items, command }, ref) {
             {(patients.length < items.length) && (
               <div className="np-popup__group-label">Patients</div>
             )}
-            {patients.map(item => renderItem(item, items.indexOf(item)))}
+            {patients.map((item) => renderItem(item, items.indexOf(item)))}
           </>
         )}
         {doctors.length > 0 && (
           <>
             {patients.length > 0 && <div className="np-popup__group-divider" />}
             <div className="np-popup__group-label">Doctors</div>
-            {doctors.map(item => renderItem(item, items.indexOf(item)))}
+            {doctors.map((item) => renderItem(item, items.indexOf(item)))}
           </>
         )}
       </div>
     </div>
   );
-});
+  },
+);
 
 export default MentionList;

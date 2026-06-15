@@ -494,8 +494,12 @@
   text-decoration: underline;
 }
 
-/* selected atom node (chip) outline */
-.doctor-notepad .ProseMirror .ProseMirror-selectednode {
+/* selected atom node (chip) outline — exclude template blocks.
+   TipTap's ReactNodeViewRenderer wraps the node in `.react-renderer
+   .node-templateBlock`, and ProseMirror applies `.ProseMirror-selectednode`
+   to THAT wrapper (not the inner [data-template-block] div), so the exclusion
+   must target the wrapper class. */
+.doctor-notepad .ProseMirror .ProseMirror-selectednode:not(.node-templateBlock) {
   outline: 2px solid var(--np-violet);
   outline-offset: 1px;
   border-radius: var(--np-radius-pill);
@@ -1468,4 +1472,42 @@
 @keyframes np-ai-pop-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* ====================== TEMPLATE STACK EXTRAS ====================== */
+
+/* Count badge on the Templates header button */
+.np-templates-btn__count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  margin-left: 2px;
+  border-radius: var(--np-radius-pill);
+  background: var(--np-purple);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* "free notes" divider between template cards and the TipTap editor */
+.np-free-notes-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 24px 0;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--np-text-faint);
+}
+.np-free-notes-divider::before,
+.np-free-notes-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--np-border-soft);
 }
