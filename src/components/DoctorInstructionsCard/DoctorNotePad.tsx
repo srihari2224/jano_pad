@@ -46,6 +46,7 @@ import { MedicineNode } from './editor/nodes/MedicineNode';
 import { DiagnosisNode } from './editor/nodes/DiagnosisNode';
 import { LabTestNode } from './editor/nodes/LabTestNode';
 import { TemplateNode } from './editor/nodes/TemplateNode';
+import { markTemplateInserted } from './editor/nodes/templateFocusSignal';
 import { SlashCommands } from './editor/extensions/SlashCommands';
 import { AiLoading } from './editor/extensions/AiLoading';
 import { buildMentionExtension } from './editor/extensions/MentionChip';
@@ -654,6 +655,9 @@ export default function DoctorNotePad({
     // tplItem may be the slash-menu wrapper { id, title, description, template }
     // OR the raw template object. Coalesce.
     const tpl = (tplItem as TemplateListItem).template || (tplItem as Template);
+    // Signal the about-to-mount NodeView to auto-focus its first field (it
+    // focuses in a layout effect once its DOM has committed).
+    markTemplateInserted();
     editor
       .chain()
       .focus()

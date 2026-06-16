@@ -391,9 +391,17 @@ interface Props {
   values: TemplateValues;
   onChange: (patch: Record<string, string | string[]>) => void;
   onRemove: () => void;
+  /** Called when Enter is pressed on the last field — exit to a new line below. */
+  onExitToNextLine?: () => void;
 }
 
-export default function ProseTemplateCard({ template, values, onChange, onRemove }: Props) {
+export default function ProseTemplateCard({
+  template,
+  values,
+  onChange,
+  onRemove,
+  onExitToNextLine,
+}: Props) {
   const noteRef = useRef<HTMLDivElement>(null);
   // Pass only the changed field; the parent merges against the latest values.
   const set = (field: string, v: string | string[]) => onChange({ [field]: v });
@@ -407,12 +415,17 @@ export default function ProseTemplateCard({ template, values, onChange, onRemove
     el.focus();
     placeCaretEnd(el);
   };
+
   const nav: Nav = {
     advance: (from) => {
       const f = getFields();
       const i = f.indexOf(from as HTMLElement);
       if (i >= 0 && f[i + 1]) focusField(f[i + 1]);
-      else if (from) from.blur();
+      else if (onExitToNextLine) {
+        // last field → leave the template and drop onto a new line in the note
+        if (from) from.blur();
+        onExitToNextLine();
+      } else if (from) from.blur();
     },
     retreat: (from) => {
       const f = getFields();
@@ -447,7 +460,19 @@ export default function ProseTemplateCard({ template, values, onChange, onRemove
             {block.heading && <p className="tp-heading">{block.heading}</p>}
             <p className="tp-p">
               {block.parts.map((part, pi) => {
-                if ('t' in part) return <span key={pi}>{part.t}</span>;
+                if ('t' in part) {
+                  // A text fragment that reads as a parameter label ("Blood
+                  // Pressure:", "Pulse:") is rendered bold so the parameters
+                  // stand out from the filled-in values and surrounding prose.
+                  if (part.t.trim().endsWith(':')) {
+                    return (
+                      <strong key={pi} className="tp-label">
+                        {part.t}
+                      </strong>
+                    );
+                  }
+                  return <span key={pi}>{part.t}</span>;
+                }
                 if (part.kind === 'pick') {
                   return (
                     <Pick
