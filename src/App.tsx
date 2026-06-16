@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import PageShell from './components/PageShell/PageShell';
 import DoctorInstructionsCard from './components/DoctorInstructionsCard';
-import AuthGate from './auth/AuthGate';
 import type { EditorApi } from './types';
 
 const PATIENT_ID = 'pat001';
@@ -38,15 +37,13 @@ export default function App() {
   }, []);
 
   return (
-    <AuthGate>
-      <PageShell
-        patientId={PATIENT_ID}
-        editorApi={editorApi}
-        title={title}
-        onTitleChange={handleTitleChange}
-      >
-        <DoctorInstructionsCard patientId={PATIENT_ID} onReady={setEditorApi} />
-      </PageShell>
-    </AuthGate>
+    <PageShell
+      patientId={PATIENT_ID}
+      editorApi={editorApi}
+      title={title}
+      onTitleChange={handleTitleChange}
+    >
+      <DoctorInstructionsCard patientId={PATIENT_ID} onReady={setEditorApi} />
+    </PageShell>
   );
 }

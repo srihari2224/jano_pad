@@ -233,14 +233,6 @@ const SaveShortcut = Extension.create({
   },
 });
 
-/** Count words and lines from the editor's plain text. */
-function getCounts(editor: Editor | null): { words: number; lines: number } {
-  if (!editor) return { words: 0, lines: 0 };
-  const text = editor.getText({ blockSeparator: '\n' });
-  const words = (text.match(/\S+/g) || []).length;
-  const lines = text.length ? text.split('\n').length : 1;
-  return { words, lines };
-}
 
 interface Props {
   patientId?: string;
@@ -662,6 +654,47 @@ export default function DoctorNotePad({
         { type: 'paragraph' },
       ])
       .run();
+    // Locate the template we just inserted: ProseMirror may reposition a block
+    // node (e.g. split the current paragraph), so the pre-insert caret position
+    // isn't reliable — find the templateBlock closest to the caret instead.
+    const caret = editor.state.selection.from;
+    let at: number | null = null;
+    let best = Infinity;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'templateBlock') {
+        const d = Math.abs(pos - caret);
+        if (d < best) {
+          best = d;
+          at = pos;
+        }
+      }
+    });
+    // Drop — and keep — the cursor in the template's first field so the doctor
+    // can type straight away, no mouse click. We re-grab focus across a short
+    // window because the editor's own post-insert focus is deferred and would
+    // otherwise steal it back a frame or two later. The `!== field` guard means
+    // that once the doctor is actually typing in the field we stop interfering.
+    const placeCaretEnd = (el: HTMLElement) => {
+      if (!el.isContentEditable) return;
+      const sel = window.getSelection();
+      if (!sel) return;
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    };
+    const focusFirstField = (tries = 0) => {
+      if (at == null) return;
+      const dom = editor.view.nodeDOM(at) as HTMLElement | null;
+      const field = dom?.querySelector?.('.tp-blank, .tp-pick') as HTMLElement | null;
+      if (field && document.activeElement !== field) {
+        field.focus();
+        placeCaretEnd(field);
+      }
+      if (tries < 20) requestAnimationFrame(() => focusFirstField(tries + 1));
+    };
+    if (at != null) requestAnimationFrame(() => focusFirstField());
     setHeaderSaved(false);
     setDraftStatus('idle');
     scheduleAutosave(editor);
@@ -1034,43 +1067,6 @@ export default function DoctorNotePad({
   }, [tmplSaved]);
 
 
-  const { words, lines } = getCounts(editor);
-
-  /* Count templateBlock nodes for the status-bar suffix. */
-  let templateCount = 0;
-  if (editor) {
-    editor.state.doc.descendants((n) => {
-      if (n.type.name === 'templateBlock') templateCount += 1;
-    });
-  }
-
-  /* --- status-bar draft indicator ---------------------------------- */
-  let draftEl = null;
-  if (restored) {
-    draftEl = (
-      <span className="np-statusbar__draft is-saved">
-        <IconCheck size={11} />
-        Draft restored
-      </span>
-    );
-  } else if (draftStatus === 'saving') {
-    draftEl = (
-      <span className="np-statusbar__draft is-saving">
-        <IconSpinner size={12} />
-        Saving…
-      </span>
-    );
-  } else if (draftStatus === 'saved') {
-    draftEl = (
-      <span className="np-statusbar__draft is-saved">
-        <IconCheck size={11} />
-        Draft saved
-      </span>
-    );
-  } else {
-    draftEl = <span className="np-statusbar__draft is-idle">Draft saved</span>;
-  }
-
   return (
     <div className="doctor-notepad">
       {/* Template creation lives in the selection bubble menu (the "+" button)
@@ -1082,18 +1078,6 @@ export default function DoctorNotePad({
       <div className="np-editor-area">
         <EditorContent editor={editor} />
       </div>
-
-      {/* ZONE 3b — STATUS BAR */}
-      <div className="np-statusbar">
-        <span className="np-statusbar__count">
-          {words} {words === 1 ? 'word' : 'words'} · {lines}{' '}
-          {lines === 1 ? 'line' : 'lines'}
-          {templateCount > 0 &&
-            ` · ${templateCount} ${templateCount === 1 ? 'template' : 'templates'}`}
-        </span>
-        {draftEl}
-      </div>
-
 
       {/* SELECTION BUBBLE — formatting + AI, appears above a text selection.
           Portaled to <body> so the scroll container can't clip it (P2b-4). */}

@@ -18,14 +18,18 @@ import '../../styles/prose-template.css';
 import type { TemplateValues } from '../../../../types';
 
 interface TemplateNodeViewProps {
+  editor: any;
   node: any;
+  getPos: () => number;
   updateAttributes: (attrs: any) => void;
   deleteNode: () => void;
   selected: boolean;
 }
 
 export default function TemplateNodeView({
+  editor,
   node,
+  getPos,
   updateAttributes,
   deleteNode,
   selected,
@@ -72,6 +76,22 @@ export default function TemplateNodeView({
     }
   };
 
+  // Enter/Tab on the last field steps the cursor out of the template and onto
+  // the line directly after it, creating that line if the template was the
+  // last block in the note.
+  const handleExit = () => {
+    if (!editor || typeof getPos !== 'function') return;
+    const pos = getPos();
+    if (pos == null) return;
+    const after = pos + node.nodeSize;
+    const { doc } = editor.state;
+    const $after = doc.resolve(Math.min(after, doc.content.size));
+    if (!$after.nodeAfter || !$after.nodeAfter.isTextblock) {
+      editor.chain().insertContentAt(after, { type: 'paragraph' }).run();
+    }
+    editor.chain().focus().setTextSelection(after + 1).run();
+  };
+
   return (
     <NodeViewWrapper
       as="div"
@@ -84,6 +104,7 @@ export default function TemplateNodeView({
         values={values}
         onChange={handleChange}
         onRemove={handleRemove}
+        onExit={handleExit}
       />
     </NodeViewWrapper>
   );

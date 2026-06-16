@@ -69,8 +69,10 @@
   line-height: 1;
 }
 .jano-tw .tp-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
   color: var(--tp-fg-1);
 }
 .jano-tw .tp-x {
@@ -98,18 +100,22 @@
   color: var(--tp-fg-3);
 }
 .jano-tw .tp-block {
-  margin: 0;
+  margin: 0 0 10px;
+}
+.jano-tw .tp-block:last-child {
+  margin-bottom: 0;
 }
 .jano-tw .tp-p {
   margin: 0 0 4px;
 }
 .jano-tw .tp-heading {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.13em;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--tp-fg-4);
-  margin: 18px 0 2px;
+  margin: 22px 0 5px;
   line-height: 1.4;
 }
 .jano-tw .tp-block:first-child .tp-heading {
@@ -132,6 +138,15 @@
   min-width: 8px;
   font-variant-numeric: tabular-nums;
   transition: background 0.12s, border-color 0.12s;
+}
+/* Short value fields (vitals, numbers) — Montserrat Black so they read like
+   the reference display: large bold number + small unit beside it. */
+.jano-tw .tp-blank:not(.tp-blank--long) {
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-size: 1.65em;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
 }
 .jano-tw .tp-blank:hover {
   background: var(--tp-bg-2);
@@ -313,7 +328,7 @@
 .doctor-notepad .ProseMirror [data-template-block] .tp-head {
   background: transparent;
   border-bottom: none;
-  padding: 0 0 6px;
+  padding: 0 0 16px;
   gap: 9px;
 }
 .doctor-notepad .ProseMirror [data-template-block] .tp-note {
@@ -345,3 +360,4 @@
   padding: 8px 12px;
   margin: 14px 0;
 }
+

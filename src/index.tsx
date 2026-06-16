@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import "./index.css";
 import App from "./App";
-import { AuthProvider } from "./auth/AuthContext";
 
 Sentry.init({
   dsn: import.meta.env.VITE_SENTRY_DSN,
@@ -31,9 +30,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       }
       showDialog
     >
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <App />
     </Sentry.ErrorBoundary>
   </React.StrictMode>
 );
