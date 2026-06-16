@@ -70,6 +70,38 @@ Rules:
 - Do NOT invent new sentences, headings or fields that were not in the note.
 - Do NOT wrap the output in markdown code fences or add any commentary.
 - Return ONLY the template text.`,
+
+  template_structured: `You are a clinical template builder. The user message is a JSON object:
+{ "description": string, "parameters": [{ "name": string, "value": string, "unit": string }], "name": string, "category": string, "accent": string }
+
+Produce ONE JSON object describing a fillable clinical note template, in EXACTLY this shape:
+{
+  "prose": [ { "heading": "optional string", "parts": [ <part>, ... ] } ],
+  "sections": [ { "title": string, "fields": [ <field>, ... ] } ]
+}
+
+A <part> is either a literal text fragment { "t": "some words " } or an editable field
+fragment { "f": "<field_id>", "kind": "num"|"long"|"pick"|"multi", "ph": "placeholder",
+"options": ["..."], "vital": "bp"|"pulse"|"spo2" }. Only include "options" for pick/multi,
+only include "vital" for the matching vital sign.
+
+A <field> is { "id": string, "label": string, "type": "bp"|"digits"|"decimal"|"time"|"select"|"multiselect"|"text",
+"unit": "string", "boxes": number, "decimals": number, "options": ["..."] }.
+
+Field-type rules (infer from each parameter's unit/value):
+- unit "mmHg" or a two-part BP value -> type "bp"; prose kind "num", vital "bp", ph "—/—".
+- unit "bpm","%","mg/dL","mmol/L","min","mL/min" or whole numbers -> type "digits", boxes 3 (add "max":100 for %); prose kind "num", ph "—". For "%" also set prose vital "spo2".
+- unit "kg","L","°F","cm","mL" or decimals -> type "decimal", boxes 3, decimals 1; prose kind "num", ph "—".
+- "HH:MM"/time -> type "time"; prose kind "num", ph "00:00".
+- value is a comma/slash list AND unit contains "(select)" -> type "select", options from the value; prose kind "pick".
+- "(multi)" -> type "multiselect", options from the value; prose kind "multi".
+- no unit / free text -> type "text", placeholder = label; prose kind "long".
+
+Rules:
+- Every prose "f" id MUST exactly match a field "id" in sections.
+- Write natural, readable clinical prose that weaves the description and parameters into sentences with the fields inline. Group related fields under headings.
+- Use SHORT snake_case field ids derived from the parameter name.
+- Respond with RAW JSON only — no markdown code fences, no commentary.`,
 };
 
 /** Read and parse a JSON body — works whether or not the body is pre-parsed. */

@@ -11,6 +11,7 @@
  * -------------------------------------------------------------------------
  */
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useEditor, EditorContent } from '@tiptap/react';
 import { Extension } from '@tiptap/core';
 import type { Editor } from '@tiptap/core';
@@ -18,11 +19,15 @@ import type {
   AiAction,
   Diagnosis,
   DraftStatus,
+  EditorApi,
   LabTest,
   MedicineDoseRow,
   MentionSnapshot,
+  ParameterRow,
   SlashItem,
   Template,
+  TemplateAccent,
+  TemplateCategory,
   TemplateListItem,
 } from '../../types';
 import StarterKit from '@tiptap/starter-kit';
@@ -55,13 +60,15 @@ import {
 import { getTemplateById } from '../../data/templates';
 import {
   addCustomTemplate,
-  buildTemplateFromText,
+  assembleTemplateFromAi,
+  buildTemplateFromStructured,
   subscribeCustomTemplates,
 } from '../../data/customTemplates';
 
 import SlashCommandList from './SlashCommandList';
 import MentionList from './MentionList';
 import MentionPopover from './MentionPopover';
+import ProseTemplateCard from './templates/ProseTemplateCard';
 import { toText as templateToText } from './templates/templateSerializer';
 import {
   IconCheck,
@@ -72,7 +79,7 @@ import {
   IconClose,
 } from './icons';
 import { formatIndianDate } from './utils';
-import { runAiAction } from './aiActions';
+import { runAiAction, isAiConfigured } from './aiActions';
 import './styles/notepad.css';
 import './styles/ai-features.css';
 
@@ -240,6 +247,8 @@ interface Props {
   initialContent?: any;
   onSave?: (draft: any) => void;
   onCancel?: () => void;
+  /** Hands an imperative API up to the shell once the editor is ready. */
+  onReady?: (api: EditorApi | null) => void;
 }
 
 /** State shape for the @-mention popover. */
@@ -255,13 +264,16 @@ interface SelMenuState {
   left: number;
 }
 
-/** State shape for the template-creator modal. */
+/** State shape for the structured "Add Template" modal (P2-0). */
 interface TmplModalState {
-  status: 'loading' | 'ready' | 'error';
-  source: string;
-  generated: string;
+  step: 'compose' | 'generating' | 'preview' | 'error';
+  description: string;
+  rows: ParameterRow[];
   name: string;
   shortcut: string;
+  category: TemplateCategory;
+  accent: TemplateAccent;
+  generated: Template | null;
   error: string;
 }
 
@@ -270,6 +282,7 @@ export default function DoctorNotePad({
   initialContent = null,
   onSave,
   onCancel,
+  onReady,
 }: Props) {
   const [headerSaved, setHeaderSaved] = useState(true);
   const [draftStatus, setDraftStatus] = useState<DraftStatus>('idle'); // idle | saving | saved
@@ -661,19 +674,6 @@ export default function DoctorNotePad({
       content: line.trim() ? [{ type: 'text', text: line }] : [],
     }));
 
-  /** Walk the editor doc for templateBlock nodes and serialize each. */
-  const templatesText = () => {
-    if (!editor) return '';
-    const lines: string[] = [];
-    editor.state.doc.descendants((node: any) => {
-      if (node.type.name === 'templateBlock') {
-        const tpl = getTemplateById(node.attrs.templateId);
-        if (tpl) lines.push(templateToText(tpl, node.attrs.values || {}));
-      }
-    });
-    return lines.join('\n\n');
-  };
-
   /* The selection used to be sent to a separate result panel. Now the AI
      action transforms the text IN PLACE: the selected range blurs + shimmers
      while we call the model, then we swap the content inline. */
@@ -735,112 +735,152 @@ export default function DoctorNotePad({
     }
   };
 
-  /* --- Feature: create a reusable template from the doctor's notes -- */
+  /* --- Feature: structured "Add Template" builder (P2-0) ----------- */
 
-  /** Strip stray code fences and guess a friendly default name from the text. */
-  const suggestTemplateName = (src: string) => {
-    const firstLine = String(src || '')
-      .split('\n')
-      .map((l) => l.trim())
-      .find((l) => l.length);
-    if (!firstLine) return 'New Template';
-    const words = firstLine.replace(/[#*_>`]/g, '').split(/\s+/).slice(0, 5);
-    const name = words.join(' ').replace(/[.:,;]+$/, '');
-    return name.length > 3 ? name : 'New Template';
-  };
+  const rowSeq = useRef(0);
+  const newRow = (name = '', value = '', unit = ''): ParameterRow => ({
+    id: `r${rowSeq.current++}`,
+    name,
+    value,
+    unit,
+  });
 
+  /** Open the structured template modal, seeded with a starter parameter table
+   *  (and any selected text as the description). */
   const openTemplateCreator = () => {
-    if (!editor || aiBusy) return;
+    if (!editor) return;
     const { from, to, empty } = editor.state.selection;
-    const source = empty
-      ? [templatesText(), editor.getText({ blockSeparator: '\n' })]
-          .filter((s) => s.trim())
-          .join('\n\n')
+    const sel = empty
+      ? ''
       : editor.state.doc.textBetween(from, to, '\n', leafTextForNode);
-
-    if (!source.trim()) {
-      setAiError('Write or select some notes first to turn them into a template.');
-      return;
-    }
     setSelMenu(null);
     setSelAiOpen(false);
     setAiError(null);
     setTmplModal({
-      status: 'loading',
-      source,
-      generated: '',
+      step: 'compose',
+      description: sel.trim(),
+      rows: [
+        newRow('Blood Pressure', '', 'mmHg'),
+        newRow('Heart Rate', '', 'bpm'),
+        newRow('Weight', '', 'kg'),
+      ],
       name: '',
       shortcut: '',
+      category: 'assessment',
+      accent: 'blue',
+      generated: null,
       error: '',
     });
-
-    runAiAction(source, 'template' as AiAction)
-      .then((generated) => {
-        setTmplModal((m) =>
-          m && m.status === 'loading'
-            ? {
-                ...m,
-                status: 'ready',
-                generated: generated.trim(),
-                name: suggestTemplateName(source),
-              }
-            : m,
-        );
-      })
-      .catch((e: any) => {
-        setTmplModal((m) =>
-          m && m.status === 'loading'
-            ? { ...m, status: 'error', error: e.message || 'AI request failed' }
-            : m,
-        );
-        import('@sentry/react').then(({ captureException }) =>
-          captureException(e, {
-            tags: { context: 'ai-template', patientId },
-          }),
-        );
-      });
   };
 
-  const retryTemplate = () => {
+  const patchModal = (patch: Partial<TmplModalState>) =>
+    setTmplModal((m) => (m ? { ...m, ...patch } : m));
+
+  const updateRow = (id: string, patch: Partial<ParameterRow>) =>
+    setTmplModal((m) =>
+      m
+        ? { ...m, rows: m.rows.map((r) => (r.id === id ? { ...r, ...patch } : r)) }
+        : m,
+    );
+  const addRow = () =>
+    setTmplModal((m) => (m ? { ...m, rows: [...m.rows, newRow()] } : m));
+  const removeRow = (id: string) =>
+    setTmplModal((m) =>
+      m ? { ...m, rows: m.rows.filter((r) => r.id !== id) } : m,
+    );
+
+  /** Generate the template: ask the AI to author it, falling back to the local
+   *  deterministic builder if AI is unconfigured or returns something unusable. */
+  const generateStructured = () => {
     if (!tmplModal) return;
-    const { source } = tmplModal;
-    setTmplModal((m) => (m ? { ...m, status: 'loading', error: '' } : m));
-    runAiAction(source, 'template' as AiAction)
-      .then((generated) =>
-        setTmplModal((m) =>
-          m && m.status === 'loading'
-            ? {
-                ...m,
-                status: 'ready',
-                generated: generated.trim(),
-                name: m.name || suggestTemplateName(source),
-              }
-            : m,
-        ),
-      )
-      .catch((e: any) =>
-        setTmplModal((m) =>
-          m && m.status === 'loading'
-            ? { ...m, status: 'error', error: e.message || 'AI request failed' }
-            : m,
-        ),
+    const m = tmplModal;
+    // The name field was removed for simplicity — derive a friendly label from
+    // the shortcut, else the first line of the description, else a fallback.
+    const fromShortcut = m.shortcut
+      .trim()
+      .replace(/[-_]+/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const fromDescription = m.description
+      .split('\n')
+      .map((l) => l.trim())
+      .find(Boolean)
+      ?.slice(0, 48);
+    const name =
+      m.name.trim() || fromShortcut || fromDescription || 'Custom Template';
+    const usable = m.rows.filter((r) => r.name.trim());
+    if (!usable.length && !m.description.trim()) {
+      patchModal({
+        step: 'error',
+        error: 'Add a description or at least one parameter row first.',
+      });
+      return;
+    }
+    const meta = {
+      name,
+      shortcut: m.shortcut,
+      accent: m.accent,
+      category: m.category,
+    };
+    patchModal({ step: 'generating', error: '' });
+
+    // Apply a finished template only if the modal is still mid-generate.
+    const applyTpl = (tpl: Template) =>
+      setTmplModal((s) =>
+        s && s.step === 'generating'
+          ? { ...s, name, step: 'preview', generated: tpl }
+          : s,
       );
+
+    const fallback = () => {
+      try {
+        applyTpl(buildTemplateFromStructured(m.description, m.rows, meta));
+      } catch (e: any) {
+        setTmplModal((s) =>
+          s && s.step === 'generating'
+            ? { ...s, step: 'error', error: e?.message || 'Could not build the template.' }
+            : s,
+        );
+      }
+    };
+
+    if (!isAiConfigured) {
+      fallback();
+      return;
+    }
+
+    const payload = JSON.stringify({
+      description: m.description,
+      parameters: m.rows.map((r) => ({
+        name: r.name,
+        value: r.value,
+        unit: r.unit,
+      })),
+      name,
+      category: m.category,
+      accent: m.accent,
+    });
+
+    runAiAction(payload, 'template_structured')
+      .then((out) => {
+        try {
+          applyTpl(assembleTemplateFromAi(out, meta));
+        } catch {
+          fallback(); // AI returned unusable JSON — build locally instead
+        }
+      })
+      .catch(() => fallback()); // AI unreachable — build locally instead
   };
 
-  const saveGeneratedTemplate = () => {
-    if (!tmplModal || tmplModal.status !== 'ready') return;
-    const name = (tmplModal.name || '').trim() || 'Untitled Template';
-    const tpl = buildTemplateFromText(tmplModal.generated, {
-      name,
-      shortcut: tmplModal.shortcut,
-    });
+  const saveStructured = () => {
+    if (!tmplModal || !tmplModal.generated) return;
+    const tpl = tmplModal.generated;
     addCustomTemplate(tpl);
     forceTick((n) => n + 1);
     setTmplModal(null);
     setTmplSaved(
       tpl.shortcut
-        ? `Template "${name}" saved · type /${tpl.shortcut} to insert`
-        : `Template "${name}" saved · find it in the / menu`,
+        ? `Template "${tpl.title}" saved · type /${tpl.shortcut} to insert`
+        : `Template "${tpl.title}" saved · find it in the / menu`,
     );
   };
 
@@ -860,6 +900,62 @@ export default function DoctorNotePad({
     setDraftStatus('saved');
   };
   handleSaveRef.current = handleSave;
+
+  /* --- whole-note AI (topbar dropdown) ----------------------------- */
+  /* Select the entire document, then reuse the same in-place AI flow the
+     selection bubble uses, so "Polish/Summarize the whole note" just works. */
+  const runWholeNoteAi = (actionId: AiAction) => {
+    if (!editor || aiBusy) return;
+    if (editor.isEmpty) {
+      setAiError('Write some notes first, then run an AI action.');
+      return;
+    }
+    editor.chain().focus().selectAll().run();
+    handleAi(actionId);
+  };
+
+  /* --- new page: clear the canvas for a fresh note (P3-1) ----------- */
+  const newPage = () => {
+    if (!editor) return;
+    editor.chain().focus().clearContent(true).run();
+    try {
+      localStorage.removeItem(`draft_note_${patientId}`);
+    } catch {
+      /* ignore */
+    }
+    setHeaderSaved(true);
+    setDraftStatus('idle');
+  };
+
+  /* --- publish the imperative API to the shell --------------------- */
+  /* Methods delegate through a ref so the published object stays stable while
+     always invoking the latest closures. */
+  const apiFnsRef = useRef({
+    save: () => {},
+    runWholeNoteAi: (_a: AiAction) => {},
+    openTemplateCreator: () => {},
+    newPage: () => {},
+  });
+  apiFnsRef.current = {
+    save: handleSave,
+    runWholeNoteAi,
+    openTemplateCreator,
+    newPage,
+  };
+
+  useEffect(() => {
+    if (!editor || !onReady) return undefined;
+    onReady({
+      editor,
+      save: () => apiFnsRef.current.save(),
+      runWholeNoteAi: (a) => apiFnsRef.current.runWholeNoteAi(a),
+      openTemplateCreator: () => apiFnsRef.current.openTemplateCreator(),
+      newPage: () => apiFnsRef.current.newPage(),
+      aiConfigured: isAiConfigured,
+    });
+    return () => onReady(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, onReady]);
 
   /* --- restore a draft on mount ------------------------------------ */
   useEffect(() => {
@@ -977,19 +1073,9 @@ export default function DoctorNotePad({
 
   return (
     <div className="doctor-notepad">
-      {/* TOP BAR — quick "create template" entry point */}
-      <div className="np-topbar">
-        <button
-          type="button"
-          className="np-topbar__btn"
-          onClick={openTemplateCreator}
-          disabled={!!tmplModal}
-          title="Turn the selected notes (or the whole note) into a reusable template"
-        >
-          <IconTemplatePlus size={15} />
-          Create template
-        </button>
-      </div>
+      {/* Template creation lives in the selection bubble menu (the "+" button)
+          and pre-built templates are insertable via the slash menu. The
+          persistent top toolbar was removed per request. */}
 
       {/* EDITOR — templates live inline as `templateBlock` nodes inside it,
           so prose and templates share one continuous notepad surface. */}
@@ -1009,8 +1095,10 @@ export default function DoctorNotePad({
       </div>
 
 
-      {/* SELECTION BUBBLE — formatting + AI, appears above a text selection */}
-      {selMenu && !aiBusy && !tmplModal && editor && (
+      {/* SELECTION BUBBLE — formatting + AI, appears above a text selection.
+          Portaled to <body> so the scroll container can't clip it (P2b-4). */}
+      {selMenu && !aiBusy && !tmplModal && editor &&
+        createPortal(
         <div
           className="np-sel-ai"
           style={{ top: selMenu.top, left: selMenu.left }}
@@ -1098,11 +1186,13 @@ export default function DoctorNotePad({
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* FLOATING LAYERS */}
-      {mentionPopover && (
+      {mentionPopover &&
+        createPortal(
         <>
           <div
             className="np-overlay"
@@ -1114,19 +1204,23 @@ export default function DoctorNotePad({
           >
             <MentionPopover data={mentionPopover.data} />
           </div>
-        </>
+        </>,
+        document.body,
       )}
 
       {/* AI working indicator — floats while the inline transform runs */}
-      {aiBusy && (
+      {aiBusy &&
+        createPortal(
         <div className="np-ai-working" role="status">
           <IconSpinner size={14} />
           AI is rewriting your selection…
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* Transient error toast (AI failures, empty-selection hints) */}
-      {aiError && (
+      {aiError &&
+        createPortal(
         <div className="np-ai-toast np-ai-toast--err" role="alert">
           <span>{aiError}</span>
           <button
@@ -1137,155 +1231,248 @@ export default function DoctorNotePad({
           >
             <IconClose size={13} />
           </button>
-        </div>
+        </div>,
+        document.body,
       )}
 
       {/* "Template saved" confirmation toast */}
-      {tmplSaved && (
+      {tmplSaved &&
+        createPortal(
         <div className="np-ai-toast np-ai-toast--ok" role="status">
           <IconCheck size={13} />
           <span>{tmplSaved}</span>
-        </div>
+        </div>,
+        document.body,
       )}
 
-      {/* TEMPLATE CREATOR MODAL */}
-      {tmplModal && (
-        <>
-          <div className="np-overlay" onMouseDown={closeTemplateModal} />
-          <div
-            className="np-tmpl-modal"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <div className="np-tmpl-modal__head">
-              <span className="np-tmpl-modal__title">
-                <IconTemplatePlus size={16} />
-                Create template
-              </span>
-              <button
-                type="button"
-                className="np-tmpl-modal__x"
-                aria-label="Close"
-                onClick={closeTemplateModal}
-              >
-                <IconClose size={15} />
-              </button>
-            </div>
-
-            {tmplModal.status === 'loading' && (
-              <div className="np-tmpl-modal__loading">
-                <IconSpinner size={18} />
-                <span>Analysing your notes and detecting variables…</span>
+      {/* STRUCTURED "ADD TEMPLATE" MODAL (P2-0) — portaled to <body> */}
+      {tmplModal &&
+        createPortal(
+          <>
+            <div className="np-overlay" onMouseDown={closeTemplateModal} />
+            <div
+              className="np-tmpl-modal np-tmpl-modal--wide"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <div className="np-tmpl-modal__head">
+                <span className="np-tmpl-modal__title">
+                  <IconTemplatePlus size={16} />
+                  Add Template
+                </span>
+                <button
+                  type="button"
+                  className="np-tmpl-modal__x"
+                  aria-label="Close"
+                  onClick={closeTemplateModal}
+                >
+                  <IconClose size={15} />
+                </button>
               </div>
-            )}
 
-            {tmplModal.status === 'error' && (
-              <div className="np-tmpl-modal__body">
-                <div className="np-tmpl-modal__error">
-                  {tmplModal.error || 'The AI could not build a template.'}
-                </div>
-                <div className="np-tmpl-modal__actions">
-                  <button
-                    type="button"
-                    className="np-btn-cancel"
-                    onClick={closeTemplateModal}
-                  >
-                    Close
-                  </button>
-                  <button
-                    type="button"
-                    className="np-btn-save"
-                    onClick={retryTemplate}
-                  >
-                    Retry
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {tmplModal.status === 'ready' && (
-              <div className="np-tmpl-modal__body">
-                <p className="np-tmpl-modal__hint">
-                  Values like <code>{'{{BP}}'}</code> become fillable fields.
-                  Edit the text if needed, then name it and pick a shortcut.
-                </p>
-                <textarea
-                  className="np-tmpl-modal__preview"
-                  value={tmplModal.generated}
-                  spellCheck={false}
-                  onChange={(e) =>
-                    setTmplModal((m) =>
-                      m ? { ...m, generated: e.target.value } : m,
-                    )
-                  }
-                />
-
-                <div className="np-tmpl-modal__fields">
+              {/* STEP 1 — COMPOSE */}
+              {tmplModal.step === 'compose' && (
+                <div className="np-tmpl-modal__body">
                   <label className="np-tmpl-field">
-                    <span className="np-tmpl-field__label">Template name</span>
-                    <input
-                      type="text"
-                      className="np-tmpl-field__input"
-                      placeholder="e.g. Headache follow-up"
-                      value={tmplModal.name}
-                      autoFocus
-                      onChange={(e) =>
-                        setTmplModal((m) =>
-                          m ? { ...m, name: e.target.value } : m,
-                        )
-                      }
+                    <span className="np-tmpl-field__label">Description</span>
+                    <textarea
+                      className="np-tmpl-desc"
+                      placeholder="What is this template for? e.g. Pre-dialysis check for vitals and access site."
+                      value={tmplModal.description}
+                      spellCheck={false}
+                      onChange={(e) => patchModal({ description: e.target.value })}
                     />
                   </label>
-                  <label className="np-tmpl-field">
-                    <span className="np-tmpl-field__label">
-                      Shortcut <span className="np-tmpl-field__opt">(optional)</span>
-                    </span>
-                    <div className="np-tmpl-field__shortcut">
-                      <span className="np-tmpl-field__slash">/</span>
-                      <input
-                        type="text"
-                        className="np-tmpl-field__input"
-                        placeholder="headache"
-                        value={tmplModal.shortcut}
-                        onChange={(e) =>
-                          setTmplModal((m) =>
-                            m
-                              ? {
-                                  ...m,
-                                  shortcut: e.target.value
-                                    .toLowerCase()
-                                    .replace(/[^a-z0-9]/g, ''),
-                                }
-                              : m,
-                          )
-                        }
-                      />
-                    </div>
-                  </label>
-                </div>
 
-                <div className="np-tmpl-modal__actions">
-                  <button
-                    type="button"
-                    className="np-btn-cancel"
-                    onClick={closeTemplateModal}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="np-btn-save"
-                    disabled={!tmplModal.generated.trim()}
-                    onClick={saveGeneratedTemplate}
-                  >
-                    <IconCheck size={13} />
-                    Save template
-                  </button>
+                  <div className="np-tmpl-table__head">
+                    <span className="np-tmpl-field__label">Parameters</span>
+                    <button
+                      type="button"
+                      className="np-tmpl-addrow"
+                      onClick={addRow}
+                    >
+                      <IconPlus size={13} /> Add row
+                    </button>
+                  </div>
+
+                  <table className="np-tmpl-table">
+                    <thead>
+                      <tr>
+                        <th>Parameter</th>
+                        <th>Value / options</th>
+                        <th>Unit</th>
+                        <th aria-label="Remove" />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tmplModal.rows.map((row) => (
+                        <tr key={row.id}>
+                          <td>
+                            <input
+                              type="text"
+                              placeholder="Blood Pressure"
+                              value={row.name}
+                              onChange={(e) =>
+                                updateRow(row.id, { name: e.target.value })
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              placeholder="AVF, AVG, Catheter"
+                              value={row.value}
+                              onChange={(e) =>
+                                updateRow(row.id, { value: e.target.value })
+                              }
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              placeholder="mmHg / (select)"
+                              value={row.unit}
+                              onChange={(e) =>
+                                updateRow(row.id, { unit: e.target.value })
+                              }
+                            />
+                          </td>
+                          <td>
+                            <button
+                              type="button"
+                              className="np-tmpl-delrow"
+                              aria-label="Remove row"
+                              onClick={() => removeRow(row.id)}
+                            >
+                              <IconClose size={13} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="np-tmpl-hint">
+                    Field types are inferred from the unit: <code>mmHg</code> → BP,
+                    <code>bpm</code>/<code>%</code> → number boxes, <code>kg</code> →
+                    decimal, add <code>(select)</code> / <code>(multi)</code> for
+                    option lists.
+                  </p>
+
+                  <div className="np-tmpl-modal__fields">
+                    <label className="np-tmpl-field">
+                      <span className="np-tmpl-field__label">
+                        Shortcut to insert{' '}
+                        <span className="np-tmpl-field__opt">(optional)</span>
+                      </span>
+                      <div className="np-tmpl-field__shortcut">
+                        <span className="np-tmpl-field__slash">/</span>
+                        <input
+                          type="text"
+                          className="np-tmpl-field__input"
+                          placeholder="predialysis"
+                          value={tmplModal.shortcut}
+                          onChange={(e) =>
+                            patchModal({
+                              shortcut: e.target.value
+                                .toLowerCase()
+                                .replace(/[^a-z0-9]/g, ''),
+                            })
+                          }
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="np-tmpl-modal__actions">
+                    <button
+                      type="button"
+                      className="np-btn-cancel"
+                      onClick={closeTemplateModal}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      className="np-btn-save"
+                      onClick={generateStructured}
+                    >
+                      <IconSparkles size={13} />
+                      Generate
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+              )}
+
+              {/* STEP 2 — GENERATING */}
+              {tmplModal.step === 'generating' && (
+                <div className="np-tmpl-modal__loading">
+                  <IconSpinner size={18} />
+                  <span>Building your template…</span>
+                </div>
+              )}
+
+              {/* ERROR */}
+              {tmplModal.step === 'error' && (
+                <div className="np-tmpl-modal__body">
+                  <div className="np-tmpl-modal__error">
+                    {tmplModal.error || 'Could not build a template.'}
+                  </div>
+                  <div className="np-tmpl-modal__actions">
+                    <button
+                      type="button"
+                      className="np-btn-cancel"
+                      onClick={closeTemplateModal}
+                    >
+                      Close
+                    </button>
+                    <button
+                      type="button"
+                      className="np-btn-save"
+                      onClick={() => patchModal({ step: 'compose', error: '' })}
+                    >
+                      Back
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP 3 — PREVIEW */}
+              {tmplModal.step === 'preview' && tmplModal.generated && (
+                <div className="np-tmpl-modal__body">
+                  <p className="np-tmpl-hint">
+                    Preview of the generated template (fields are empty — ready to
+                    fill once inserted).
+                  </p>
+                  <div className="np-tmpl-preview-pane">
+                    <ProseTemplateCard
+                      template={tmplModal.generated}
+                      values={{}}
+                      onChange={() => {}}
+                      onRemove={() => {}}
+                    />
+                  </div>
+                  <div className="np-tmpl-modal__actions">
+                    <button
+                      type="button"
+                      className="np-btn-cancel"
+                      onClick={() => patchModal({ step: 'compose' })}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      className="np-btn-save"
+                      onClick={saveStructured}
+                    >
+                      <IconCheck size={13} />
+                      Save template
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>,
+          document.body,
+        )}
     </div>
   );
 }
