@@ -42,6 +42,81 @@
   align-items: center;
   gap: 6px;
 }
+.cap-topbar__center {
+  min-width: 0;
+}
+.cap-topbar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+/* whole-note AI + save controls */
+.cap-ai {
+  position: relative;
+}
+.cap-ai__btn,
+.cap-save {
+  font-size: 13px;
+  font-weight: 600;
+}
+.cap-ai__btn:disabled,
+.cap-save:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.cap-save__hint {
+  margin-left: 2px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--cap-text-faint);
+}
+
+/* dropdown menus (topbar AI + sidebar section ⋯) */
+.cap-menu__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.cap-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 41;
+  min-width: 190px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--cap-panel-2);
+  border: 1px solid var(--cap-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+.cap-menu--left {
+  right: auto;
+  left: 0;
+}
+.cap-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--cap-text);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.cap-menu__item:hover {
+  background: var(--cap-panel);
+}
+.cap-menu__item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .cap-topbar__search {
   display: flex;
   align-items: center;
@@ -81,6 +156,18 @@
   flex-direction: column;
   transition: width 0.2s ease, opacity 0.2s ease, padding 0.2s ease;
   overflow: hidden;
+}
+.cap-root--collapsed .cap-sidebar {
+  width: 0;
+  padding-left: 0;
+  padding-right: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Backdrop is desktop-hidden; only used as the mobile drawer scrim. */
+.cap-backdrop {
+  display: none;
 }
 
 .cap-sidebar__doc {
@@ -237,6 +324,13 @@
   border-top-left-radius: 0;
 }
 
+/* Bare layout (no topbar/sidebar): notepad fills the viewport with no frame. */
+.cap-root--bare .cap-content {
+  border: none;
+  border-radius: 0;
+  background: var(--cap-bg);
+}
+
 .cap-page {
   width: 100%;
   max-width: 820px;
@@ -278,4 +372,216 @@
 }
 .cap-content::-webkit-scrollbar-thumb:hover {
   background: #48484f;
+}
+
+/* ── SIDEBAR SECTION MENU + TAB PANELS ───────────────────── */
+.cap-sidebar__section-menu {
+  position: relative;
+}
+
+.cap-sidebar__panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 8px;
+}
+
+/* Outline (table of contents) */
+.cap-outline {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.cap-outline__item {
+  display: block;
+  width: 100%;
+  padding: 5px 6px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cap-text-dim);
+  font-size: 13px;
+  line-height: 1.35;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.cap-outline__item:hover {
+  background: var(--cap-panel);
+  color: var(--cap-text);
+}
+.cap-outline__item--h3 {
+  padding-left: 18px;
+  font-size: 12.5px;
+}
+
+/* Files */
+.cap-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 22px 12px;
+  border: 1.5px dashed var(--cap-border);
+  border-radius: 11px;
+  color: var(--cap-text-dim);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.cap-dropzone:hover,
+.cap-dropzone.is-over {
+  border-color: var(--cap-accent);
+  background: rgba(59, 130, 246, 0.07);
+  color: var(--cap-text);
+}
+.cap-dropzone__title {
+  font-size: 13px;
+  font-weight: 600;
+}
+.cap-dropzone__hint {
+  font-size: 12px;
+  color: var(--cap-text-faint);
+}
+.cap-files__list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cap-files__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 7px;
+  background: var(--cap-panel);
+  color: var(--cap-text);
+  font-size: 12.5px;
+}
+.cap-files__note {
+  margin-top: 12px;
+}
+
+/* Search */
+.cap-search__field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--cap-panel);
+  color: var(--cap-text-dim);
+}
+.cap-search__field input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  outline: none;
+  color: var(--cap-text);
+  font-family: inherit;
+  font-size: 13px;
+}
+.cap-search__count {
+  margin: 10px 6px 6px;
+  font-size: 12px;
+  color: var(--cap-text-faint);
+}
+.cap-search__results {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cap-search__result {
+  display: block;
+  width: 100%;
+  padding: 7px 8px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--cap-text-dim);
+  font-size: 12.5px;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.cap-search__result:hover {
+  background: var(--cap-panel);
+  color: var(--cap-text);
+}
+.cap-search__hit {
+  background: rgba(59, 130, 246, 0.32);
+  color: var(--cap-text);
+  border-radius: 3px;
+  padding: 0 1px;
+}
+
+/* ── MOBILE (≤768px): sidebar becomes an overlay drawer ──── */
+@media (max-width: 768px) {
+  .cap-topbar {
+    grid-template-columns: auto 1fr auto;
+  }
+  .cap-save__hint {
+    display: none;
+  }
+
+  .cap-content {
+    border-top-left-radius: 0;
+    border-left: none;
+  }
+
+  .cap-sidebar {
+    position: fixed;
+    top: 48px;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    padding: 6px 16px 16px;
+    background: var(--cap-bg);
+    border-right: 1px solid var(--cap-border);
+    box-shadow: 8px 0 28px rgba(0, 0, 0, 0.45);
+    transform: translateX(0);
+    opacity: 1;
+    transition: transform 0.22s ease;
+    z-index: 45;
+  }
+  /* On mobile, "collapsed" slides the drawer off-screen instead of
+     shrinking it to zero width. */
+  .cap-root--collapsed .cap-sidebar {
+    width: 280px;
+    padding: 6px 16px 16px;
+    opacity: 1;
+    pointer-events: none;
+    transform: translateX(-100%);
+  }
+
+  /* Scrim behind the open drawer */
+  .cap-backdrop {
+    display: block;
+    position: fixed;
+    inset: 48px 0 0 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 44;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+  }
+  .cap-root--collapsed .cap-backdrop {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .cap-page {
+    padding: 28px 18px 0;
+  }
+  .cap-page__title {
+    font-size: 26px;
+  }
 }
