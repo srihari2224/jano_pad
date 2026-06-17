@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { EditorApi } from '../../types/index';
 import DictationModal from '../DictationModal/DictationModal';
 import './pageshell.css';
 import './dark-page.css';
+
+const DEMO_SEEN_KEY = 'janopad_demo_seen';
 
 function MicIcon() {
   return (
@@ -17,6 +19,7 @@ function MicIcon() {
 
 export default function PageShell({
   children,
+  patientId,
   editorApi,
   title,
   onTitleChange,
@@ -28,6 +31,24 @@ export default function PageShell({
   onTitleChange: (next: string) => void;
 }) {
   const [isDictating, setIsDictating] = useState(false);
+
+  // First-visit demo CTA: show only when there's no saved draft for this
+  // patient and the demo hasn't been loaded before.
+  const [showDemo, setShowDemo] = useState(false);
+  useEffect(() => {
+    try {
+      const hasDraft = !!localStorage.getItem(`draft_note_${patientId}`);
+      const seen = !!localStorage.getItem(DEMO_SEEN_KEY);
+      setShowDemo(!hasDraft && !seen);
+    } catch {
+      /* ignore */
+    }
+  }, [patientId]);
+
+  const handleLoadDemo = () => {
+    editorApi?.loadDemo();
+    setShowDemo(false);
+  };
 
   const focusBody = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -49,6 +70,15 @@ export default function PageShell({
               onKeyDown={focusBody}
               spellCheck={false}
             />
+            {showDemo && editorApi && (
+              <button
+                type="button"
+                className="cap-demo-btn"
+                onClick={handleLoadDemo}
+              >
+                Demo
+              </button>
+            )}
             <button
               type="button"
               className={`cap-dictate-btn${isDictating ? ' is-recording' : ''}`}

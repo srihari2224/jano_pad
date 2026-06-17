@@ -86,6 +86,85 @@ import './styles/ai-features.css';
 const PLACEHOLDER_TEXT =
   'Start typing, or press / to insert, @ to mention a patient or doctor...';
 
+/* First-visit demo. One-click loads a sample note so a new viewer can see how
+   filled templates + prose render together. `janopad_demo_seen` is set once the
+   demo is loaded so the call-to-action never reappears. */
+const DEMO_SEEN_KEY = 'janopad_demo_seen';
+
+/* Two real templateBlock nodes (filled) wrapped in surrounding prose — exactly
+   the doc shape an authored note would have. Field keys match the `f` ids in
+   src/data/templates.ts. */
+const DEMO_DOC = {
+  type: 'doc',
+  content: [
+    {
+      type: 'heading',
+      attrs: { level: 2 },
+      content: [{ type: 'text', text: 'Mr. Ramesh K — 58 / M · MRN 4471' }],
+    },
+    {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text: 'Maintenance haemodialysis, 3 sessions/week. Below are the two notes captured during today’s session — this is how a completed note looks in Jano Pad.',
+        },
+      ],
+    },
+    {
+      type: 'templateBlock',
+      attrs: {
+        templateId: 'tmpl_pre_dialysis',
+        values: {
+          bp: '140/90',
+          pulse: '82',
+          spo2: '98',
+          temp: '98.6',
+          weight: '68.5',
+          grbs: '124',
+          access_type: 'AVF',
+          access_site: 'Left forearm',
+          complaints: 'Mild fatigue, no chest pain or breathlessness.',
+          ufgoal: '2.5',
+          duration: '240',
+          bfr: '300',
+          dial_na: '138',
+          dial_k: '2.0',
+        },
+      },
+    },
+    { type: 'paragraph' },
+    {
+      type: 'templateBlock',
+      attrs: {
+        templateId: 'tmpl_post_dialysis',
+        values: {
+          bp: '128/82',
+          pulse: '76',
+          spo2: '99',
+          temp: '98.4',
+          weight: '66.0',
+          uf: '2.4',
+          duration: '240',
+          access: 'AVF',
+          complications: ['None'],
+          condition: 'Stable',
+          notes: 'Tolerated the session well. No intradialytic complications.',
+        },
+      },
+    },
+    {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text: 'Plan: continue current prescription. Review labs next session. Patient counselled on fluid restriction.',
+        },
+      ],
+    },
+  ],
+};
+
 /* HTML for the /vitals editable table. */
 const VITALS_TABLE_HTML = `
 <table>
@@ -960,6 +1039,23 @@ export default function DoctorNotePad({
     setDraftStatus('idle');
   };
 
+  /* --- first-visit demo -------------------------------------------- */
+  /* Load the sample note into the editor and mark the demo as seen so the
+     header CTA (rendered by PageShell) retires for good. */
+  const loadDemo = () => {
+    if (!editor) return;
+    editor.commands.setContent(DEMO_DOC);
+    editor.commands.focus('end');
+    try {
+      localStorage.setItem(DEMO_SEEN_KEY, '1');
+    } catch {
+      /* ignore quota / privacy-mode errors */
+    }
+    setHeaderSaved(false);
+    setDraftStatus('idle');
+    scheduleAutosave(editor);
+  };
+
   /* --- publish the imperative API to the shell --------------------- */
   /* Methods delegate through a ref so the published object stays stable while
      always invoking the latest closures. */
@@ -968,12 +1064,14 @@ export default function DoctorNotePad({
     runWholeNoteAi: (_a: AiAction) => {},
     openTemplateCreator: () => {},
     newPage: () => {},
+    loadDemo: () => {},
   });
   apiFnsRef.current = {
     save: handleSave,
     runWholeNoteAi,
     openTemplateCreator,
     newPage,
+    loadDemo,
   };
 
   useEffect(() => {
@@ -984,6 +1082,7 @@ export default function DoctorNotePad({
       runWholeNoteAi: (a) => apiFnsRef.current.runWholeNoteAi(a),
       openTemplateCreator: () => apiFnsRef.current.openTemplateCreator(),
       newPage: () => apiFnsRef.current.newPage(),
+      loadDemo: () => apiFnsRef.current.loadDemo(),
       aiConfigured: isAiConfigured,
     });
     return () => onReady(null);

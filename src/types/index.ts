@@ -212,6 +212,8 @@ export interface EditorApi {
   openTemplateCreator: () => void;
   /** Clear the canvas to start a fresh note. */
   newPage: () => void;
+  /** Load the first-visit demo note (two filled templates + prose). */
+  loadDemo: () => void;
   /** False when the AI backend env is not configured. */
   aiConfigured: boolean;
 }
