@@ -4,7 +4,7 @@
  * One barrel of types reused across the data layer, the TipTap editor
  * nodes/extensions, and the React components.
  */
-import type { JSONContent } from '@tiptap/core';
+import type { Editor, JSONContent } from '@tiptap/core';
 
 /* ── Mentions (patients & doctors) ─────────────────────────────────────── */
 
@@ -179,9 +179,44 @@ export type TemplateValues = Record<string, string | string[]>;
 
 /* ── Editor / app state ────────────────────────────────────────────────── */
 
-export type AiAction = 'polish' | 'expand' | 'summarize' | 'explain';
+export type AiAction =
+  | 'polish'
+  | 'expand'
+  | 'summarize'
+  | 'explain'
+  | 'template'
+  | 'template_structured';
 
 export type DraftStatus = 'idle' | 'saving' | 'saved';
+
+/** One row of the structured "Add Template" parameter table (P2-0). */
+export interface ParameterRow {
+  id: string; // local key for React list rendering
+  name: string; // e.g. "Blood Pressure"
+  value: string; // optional example/hint value
+  unit: string; // e.g. "mmHg", "AVF, AVG (select)"
+}
+
+/**
+ * Imperative surface the editor (DoctorNotePad) exposes to the surrounding
+ * PageShell, so the shell's topbar/sidebar/FABs can drive editor actions
+ * (outline, search, save, whole-note AI, new page) without owning the editor.
+ */
+export interface EditorApi {
+  editor: Editor;
+  /** Persist the current note immediately (same as Ctrl/Cmd+S). */
+  save: () => void;
+  /** Run an AI action over the whole note (polish/summarize/…). */
+  runWholeNoteAi: (actionId: AiAction) => void;
+  /** Open the structured "Add Template" modal. */
+  openTemplateCreator: () => void;
+  /** Clear the canvas to start a fresh note. */
+  newPage: () => void;
+  /** Load the first-visit demo note (two filled templates + prose). */
+  loadDemo: () => void;
+  /** False when the AI backend env is not configured. */
+  aiConfigured: boolean;
+}
 
 export interface DraftTemplateInstance {
   instanceId: string;

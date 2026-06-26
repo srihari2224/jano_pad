@@ -391,9 +391,18 @@ interface Props {
   values: TemplateValues;
   onChange: (patch: Record<string, string | string[]>) => void;
   onRemove: () => void;
+  /** Called when the user presses Enter/Tab on the LAST field — moves the
+   *  cursor out of the template and onto the next line of the note. */
+  onExit?: () => void;
 }
 
-export default function ProseTemplateCard({ template, values, onChange, onRemove }: Props) {
+export default function ProseTemplateCard({
+  template,
+  values,
+  onChange,
+  onRemove,
+  onExit,
+}: Props) {
   const noteRef = useRef<HTMLDivElement>(null);
   // Pass only the changed field; the parent merges against the latest values.
   const set = (field: string, v: string | string[]) => onChange({ [field]: v });
@@ -412,7 +421,13 @@ export default function ProseTemplateCard({ template, values, onChange, onRemove
       const f = getFields();
       const i = f.indexOf(from as HTMLElement);
       if (i >= 0 && f[i + 1]) focusField(f[i + 1]);
-      else if (from) from.blur();
+      // Past the last field: leave the template entirely and drop the cursor
+      // on the next line of the note (falling back to a plain blur in the
+      // preview modal, where there's no editor to step out into).
+      else if (onExit) {
+        if (from) from.blur();
+        onExit();
+      } else if (from) from.blur();
     },
     retreat: (from) => {
       const f = getFields();
@@ -426,19 +441,7 @@ export default function ProseTemplateCard({ template, values, onChange, onRemove
   return (
     <div className={`tp-sheet tp-accent--${template.accent || 'crimson'}`}>
       <div className="tp-head">
-        <span className="tp-tag">
-          <span className="tp-tag-ico">{tagIcon}</span>
-          {template.category}
-        </span>
         <span className="tp-title">{template.title}</span>
-        <button
-          type="button"
-          className="tp-x"
-          aria-label="Remove note"
-          onClick={onRemove}
-        >
-          ✕
-        </button>
       </div>
 
       <div className="tp-note" ref={noteRef}>

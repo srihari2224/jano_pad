@@ -14,12 +14,14 @@
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react';
 import DoctorNotePad from './DoctorNotePad';
-import type { Draft } from '../../types';
+import type { Draft, EditorApi } from '../../types';
 
 export default function DoctorInstructionsCard({
   patientId = 'pat001',
+  onReady,
 }: {
   patientId?: string;
+  onReady?: (api: EditorApi | null) => void;
 }) {
   useEffect(() => {
     Sentry.setUser({ id: patientId });
@@ -45,6 +47,7 @@ export default function DoctorInstructionsCard({
       initialContent={savedNote?.editor || null}
       onSave={handleSave}
       onCancel={handleCancel}
+      onReady={onReady}
     />
   );
 }

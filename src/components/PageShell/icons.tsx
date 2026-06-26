@@ -94,3 +94,26 @@ export const IcoDocPlus = ({ size = 20 }: { size?: number }) => (
     <line x1="9.5" y1="14.5" x2="14.5" y2="14.5" />
   </svg>
 );
+
+export const IcoSave = ({ size = 16 }: { size?: number }) => (
+  <svg {...base(size)}>
+    <path d="M5 3h11l3 3v13a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" />
+    <polyline points="7 3 7 8 15 8" />
+    <rect x="8" y="13" width="8" height="6" rx="1" />
+  </svg>
+);
+
+export const IcoSparkles = ({ size = 16 }: { size?: number }) => (
+  <svg {...base(size)}>
+    <path d="M12 4l1.6 4.4L18 10l-4.4 1.6L12 16l-1.6-4.4L6 10l4.4-1.6L12 4z" />
+    <path d="M18 15l.7 1.8L20.5 17.5l-1.8.7L18 20l-.7-1.8L15.5 17.5l1.8-.7L18 15z" />
+  </svg>
+);
+
+export const IcoDownload = ({ size = 16 }: { size?: number }) => (
+  <svg {...base(size)}>
+    <path d="M12 3v12" />
+    <polyline points="7 11 12 16 17 11" />
+    <path d="M4 20h16" />
+  </svg>
+);

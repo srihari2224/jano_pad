@@ -5,40 +5,6 @@
    Self-contained dark palette so it reads correctly on the #232327 notepad.
    ========================================================================== */
 
-/* ---- TOP BAR --------------------------------------------------------------- */
-.doctor-notepad .np-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 8px 14px 0;
-}
-.doctor-notepad .np-topbar__btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  height: 30px;
-  padding: 0 13px;
-  border: 1px solid rgba(229, 75, 75, 0.4);
-  border-radius: 8px;
-  background: rgba(229, 75, 75, 0.12);
-  color: #f0a3a3;
-  font-family: 'Figtree', sans-serif;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.14s, border-color 0.14s, color 0.14s;
-}
-.doctor-notepad .np-topbar__btn:hover {
-  background: rgba(229, 75, 75, 0.2);
-  border-color: rgba(229, 75, 75, 0.65);
-  color: #f7c0c0;
-}
-.doctor-notepad .np-topbar__btn:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-
 /* ---- selection-bubble "create template" button ---------------------------- */
 .np-sel-create {
   color: #e3b468 !important;
@@ -332,4 +298,210 @@
   .np-tmpl-modal__fields {
     grid-template-columns: 1fr;
   }
+}
+
+/* ---- PERSISTENT TOOLBAR (P2b-1/2) ----------------------------------------- */
+.doctor-notepad .np-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #232327;
+  border-bottom: 1px solid #303036;
+  flex-wrap: wrap;
+}
+.np-toolbar__group {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.np-toolbar__div {
+  width: 1px;
+  height: 18px;
+  background: #3a3a40;
+  margin: 0 4px;
+}
+.np-toolbar__spacer {
+  flex: 1;
+}
+.np-tb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 7px;
+  border: none;
+  border-radius: 7px;
+  background: transparent;
+  color: #c7c7cd;
+  font-family: 'Figtree', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.np-tb-btn:hover:not(:disabled) {
+  background: #2c2c31;
+  color: #fff;
+}
+.np-tb-btn.is-active {
+  background: #34343c;
+  color: #fff;
+}
+.np-tb-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.np-tb-hl {
+  border-radius: 3px;
+  padding: 0 3px;
+  background: rgba(250, 204, 21, 0.35);
+  color: #f4f4f5;
+}
+.np-toolbar__create {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid rgba(227, 180, 104, 0.4);
+  border-radius: 8px;
+  background: rgba(227, 180, 104, 0.12);
+  color: #e3b468;
+  font-family: 'Figtree', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+.np-toolbar__create:hover:not(:disabled) {
+  background: rgba(227, 180, 104, 0.2);
+  border-color: rgba(227, 180, 104, 0.65);
+  color: #f0c987;
+}
+.np-toolbar__create:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---- STRUCTURED "ADD TEMPLATE" MODAL (P2-0) ------------------------------- */
+.np-tmpl-modal--wide {
+  width: 680px;
+}
+.np-tmpl-desc {
+  width: 100%;
+  min-height: 64px;
+  max-height: 160px;
+  resize: vertical;
+  padding: 10px 12px;
+  border: 1px solid #36363c;
+  border-radius: 9px;
+  background: #1c1c20;
+  color: #dcdce0;
+  font-family: 'Figtree', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  outline: none;
+}
+.np-tmpl-desc:focus {
+  border-color: #e3b468;
+}
+.np-tmpl-table__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 8px;
+}
+.np-tmpl-addrow,
+.np-tmpl-delrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid #36363c;
+  border-radius: 7px;
+  background: #1c1c20;
+  color: #c7c7cd;
+  font-family: 'Figtree', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 9px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.np-tmpl-addrow:hover {
+  border-color: #4a4a52;
+  color: #fff;
+}
+.np-tmpl-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.np-tmpl-table th {
+  text-align: left;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8b8990;
+  padding: 0 6px 6px;
+}
+.np-tmpl-table td {
+  padding: 3px 6px 3px 0;
+}
+.np-tmpl-table td:first-child {
+  padding-left: 0;
+}
+.np-tmpl-table input {
+  width: 100%;
+  height: 32px;
+  padding: 0 9px;
+  border: 1px solid #36363c;
+  border-radius: 7px;
+  background: #1c1c20;
+  color: #ececf0;
+  font-family: 'Figtree', sans-serif;
+  font-size: 12.5px;
+  outline: none;
+  transition: border-color 0.12s;
+}
+.np-tmpl-table input:focus {
+  border-color: #e3b468;
+}
+.np-tmpl-delrow {
+  padding: 6px;
+  color: #8b8990;
+}
+.np-tmpl-delrow:hover {
+  border-color: rgba(229, 75, 75, 0.5);
+  color: #f2b8b8;
+}
+.np-tmpl-hint {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: #8b8990;
+}
+.np-tmpl-hint code {
+  font-family: 'SFMono-Regular', ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  padding: 1px 4px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background: rgba(227, 180, 104, 0.16);
+  color: #e3b468;
+}
+.np-tmpl-modal__fields select.np-tmpl-field__input {
+  text-transform: capitalize;
+  cursor: pointer;
+}
+.np-tmpl-preview-pane {
+  border: 1px solid #303036;
+  border-radius: 10px;
+  background: #1c1c20;
+  padding: 10px;
+  max-height: 320px;
+  overflow-y: auto;
 }

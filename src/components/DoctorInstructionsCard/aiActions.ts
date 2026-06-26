@@ -13,7 +13,19 @@
  */
 import type { AiAction } from '../../types';
 
+/**
+ * The AI endpoint is served same-origin at /api/enhance (a Vercel function in
+ * prod, a Vite dev middleware locally). It is considered "configured" unless
+ * explicitly disabled via VITE_AI_DISABLED=true — which lets the UI show a
+ * clear disabled state instead of failing every action with a toast (P3-5).
+ */
+export const isAiConfigured =
+  String(import.meta.env.VITE_AI_DISABLED).toLowerCase() !== 'true';
+
 export async function runAiAction(text: string, action: AiAction): Promise<string> {
+  if (!isAiConfigured) {
+    throw new Error('AI is not configured. Set up the AI backend to enable this.');
+  }
   let res: Response;
   try {
     res = await fetch('/api/enhance', {
