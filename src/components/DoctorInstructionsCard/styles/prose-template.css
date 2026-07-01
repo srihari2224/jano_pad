@@ -25,6 +25,7 @@
   --tp-red: #e8736b;
   --tp-red-wash: rgba(232, 115, 107, 0.14);
 
+  position: relative;
   background: var(--tp-bg-1);
   border: 1px solid var(--tp-line);
   border-radius: 14px;
@@ -33,6 +34,501 @@
   box-shadow: 0 18px 44px -22px rgba(0, 0, 0, 0.6);
   color: var(--tp-fg-1);
   font-family: 'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.jano-tw .tp-sheet:not(.tp-sheet--editing):hover {
+  cursor: grab;
+}
+.jano-tw .tp-sheet--editing {
+  border-color: rgba(127, 217, 190, 0.5);
+  box-shadow: 0 16px 44px -18px rgba(0, 0, 0, 0.75);
+}
+
+/* Delete warning — one Backspace past this point selects the template;
+   a second deletes it. Every letter glows in its own colour (via
+   `currentColor`) so the whole block visibly says "about to go". */
+/* Pending-delete signal is text-only: every letter glows in its own hue
+   (via currentColor) so the block visibly says "about to go". No border,
+   no box, no background — nothing wrapping the card. */
+.jano-tw .tp-sheet--pending-delete .tp-title,
+.jano-tw .tp-sheet--pending-delete .tp-heading,
+.jano-tw .tp-sheet--pending-delete .tp-p,
+.jano-tw .tp-sheet--pending-delete .tp-blank,
+.jano-tw .tp-sheet--pending-delete .tp-pick,
+.jano-tw .tp-sheet--pending-delete .tp-flag {
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* pencil — read-mode affordance, ghost until the card is hovered */
+.jano-tw .tp-pencil {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--tp-fg-3);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.12s, background 0.12s, color 0.12s, border-color 0.12s;
+}
+.jano-tw .tp-sheet:hover .tp-pencil {
+  opacity: 1;
+}
+.jano-tw .tp-pencil:hover {
+  background: var(--tp-bg-3);
+  border-color: var(--tp-line-2);
+  color: var(--tp-fg-1);
+}
+.jano-tw .tp-pencil:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--tp-teal);
+  outline-offset: 2px;
+}
+
+/* pencil in its "active" state also serves as Done — always visible while
+   editing (not hover-gated), teal-tinted so its role is unambiguous. */
+.jano-tw .tp-pencil--active {
+  opacity: 1;
+  background: var(--tp-teal-wash);
+  color: var(--tp-teal);
+  border-color: transparent;
+}
+.jano-tw .tp-pencil--active:hover {
+  filter: brightness(1.12);
+  background: var(--tp-teal-wash);
+  color: var(--tp-teal);
+}
+
+/* short name + save, beside the title, editing mode only */
+.jano-tw .tp-save-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.jano-tw .tp-shortcut-input {
+  background: var(--tp-bg-2);
+  border: 1px solid var(--tp-line-2);
+  border-radius: 6px;
+  padding: 5px 9px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tp-fg-1);
+  width: 110px;
+}
+.jano-tw .tp-shortcut-input::placeholder {
+  color: var(--tp-fg-4);
+}
+.jano-tw .tp-shortcut-input:focus {
+  outline: none;
+  border-color: var(--tp-teal);
+}
+/* Shortcut field: a fixed "/" prefix so the doctor never has to type it,
+   sitting flush against the input on the left. */
+.jano-tw .tp-shortcut-field {
+  display: inline-flex;
+  align-items: center;
+  background: var(--tp-bg-2);
+  border: 1px solid var(--tp-line-2);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.jano-tw .tp-shortcut-field:focus-within {
+  border-color: var(--tp-teal);
+}
+.jano-tw .tp-shortcut-slash {
+  padding: 5px 4px 5px 9px;
+  color: var(--tp-fg-4);
+  font-size: 12px;
+  font-family: inherit;
+  user-select: none;
+}
+.jano-tw .tp-shortcut-field .tp-shortcut-input {
+  background: transparent;
+  border: none;
+  padding: 5px 9px 5px 2px;
+  width: 100px;
+}
+.jano-tw .tp-shortcut-field .tp-shortcut-input:focus {
+  outline: none;
+  border: none;
+}
+
+/* Cancel (X) sitting beside Save — pale, secondary. Exits edit mode
+   without committing anything to the custom-template library. */
+.jano-tw .tp-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--tp-line-2);
+  background: transparent;
+  color: var(--tp-fg-3);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.jano-tw .tp-cancel-btn:hover {
+  background: var(--tp-bg-3);
+  color: var(--tp-fg-1);
+  border-color: var(--tp-fg-4);
+}
+
+/* (i) button beside the title — opens the details dashboard. */
+.jano-tw .tp-info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: 6px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--tp-fg-3);
+  cursor: pointer;
+  vertical-align: middle;
+  transition: background 0.12s, color 0.12s;
+}
+.jano-tw .tp-info-btn:hover,
+.jano-tw .tp-info-btn--active {
+  background: var(--tp-teal-wash);
+  color: var(--tp-teal);
+}
+
+/* Details dashboard popover — floats below the title, one row per var. */
+.jano-tw .tp-info-popover {
+  position: absolute;
+  top: 46px;
+  left: 20px;
+  right: 20px;
+  max-width: 620px;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 16px;
+  background: var(--tp-bg-2);
+  border: 1px solid var(--tp-line-2);
+  border-radius: 10px;
+  box-shadow: 0 18px 44px -14px rgba(0, 0, 0, 0.7);
+  font-size: 12px;
+}
+.jano-tw .tp-info-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--tp-line);
+  margin-bottom: 2px;
+}
+.jano-tw .tp-info-title {
+  font-weight: 600;
+  color: var(--tp-fg-1);
+  letter-spacing: 0.01em;
+}
+.jano-tw .tp-info-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--tp-fg-3);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.jano-tw .tp-info-close:hover {
+  background: var(--tp-bg-3);
+  color: var(--tp-fg-1);
+}
+.jano-tw .tp-info-sep {
+  margin-top: 8px;
+  color: var(--tp-fg-3);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.jano-tw .tp-info-empty {
+  color: var(--tp-fg-4);
+  font-style: italic;
+}
+.jano-tw .tp-info-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr) minmax(0, 0.6fr) minmax(0, 0.6fr) auto;
+  gap: 6px;
+  align-items: center;
+}
+.jano-tw .tp-info-field input {
+  background: var(--tp-bg-1);
+  border: 1px solid var(--tp-line-2);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 12px;
+  color: var(--tp-fg-1);
+  min-width: 0;
+}
+.jano-tw .tp-info-field input:focus {
+  outline: none;
+  border-color: var(--tp-teal);
+}
+.jano-tw .tp-info-field-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: transparent;
+  color: var(--tp-fg-4);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.jano-tw .tp-info-field-x:hover {
+  background: var(--tp-crimson-wash);
+  color: var(--tp-crimson);
+}
+
+/* Manual Save button — no auto-save; doctor commits with a click. */
+.jano-tw .tp-save-btn {
+  background: var(--tp-teal-wash);
+  color: var(--tp-teal);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: filter 0.12s;
+}
+.jano-tw .tp-save-btn:hover {
+  filter: brightness(1.12);
+}
+.jano-tw .tp-save-btn:focus-visible {
+  outline: 2px solid var(--tp-teal);
+  outline-offset: 2px;
+}
+
+/* editable heading / static text (authoring mode) — grows slightly on
+   hover/focus so typing here feels tactile, not just a passive box. */
+.jano-tw .tp-editable-text {
+  display: inline-block;
+  outline: none;
+  cursor: text;
+  border-radius: 3px;
+  padding: 0 1px;
+  transform-origin: left center;
+  transition: background 0.12s, transform 0.15s;
+}
+.jano-tw .tp-editable-text:hover {
+  background: var(--tp-bg-2);
+  transform: scale(1.025);
+}
+.jano-tw .tp-editable-text:focus {
+  background: var(--tp-bg-2);
+  box-shadow: 0 0 0 1px var(--tp-line-2);
+  transform: scale(1.025);
+}
+.jano-tw .tp-title-editable {
+  font: inherit;
+  letter-spacing: inherit;
+}
+/* Empty-state ghost text — only rendered when the doctor hasn't typed
+   anything yet. Kept behind :empty:not(:focus) so it disappears the
+   moment they start writing. */
+.jano-tw .tp-editable-text[data-placeholder]:empty:not(:focus)::before {
+  content: attr(data-placeholder);
+  color: var(--tp-fg-4);
+  opacity: 0.55;
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* Casual (non-edit) mode — templates are grabbable cards. Grab cursor
+   over the sheet padding tells the doctor they can drag; individual
+   fields keep the text/pointer cursor via their own rules. */
+.doctor-notepad .ProseMirror [data-template-block]:not(.is-editing) .tp-sheet {
+  cursor: grab;
+}
+.doctor-notepad .ProseMirror [data-template-block]:not(.is-editing) .tp-sheet:active {
+  cursor: grabbing;
+}
+
+/* Unified body-block editor (edit mode). ONE contentEditable paragraph;
+   field chips are inline atoms inside it. The paragraph itself supplies
+   the placeholder when the whole run is empty. */
+.jano-tw .tp-p--edit {
+  outline: none;
+  min-height: 1.5em;
+  white-space: pre-wrap;
+  word-break: break-word;
+  cursor: text;
+}
+.jano-tw .tp-p--edit:empty::before,
+.jano-tw .tp-p--edit:not(:focus):has(> :not(*)):before {
+  content: attr(data-placeholder);
+  color: var(--tp-fg-4);
+  opacity: 0.55;
+  font-style: italic;
+  pointer-events: none;
+}
+.jano-tw .tp-p--edit:empty::before {
+  content: attr(data-placeholder);
+  color: var(--tp-fg-4);
+  opacity: 0.55;
+  font-style: italic;
+  pointer-events: none;
+}
+
+/* Inline chip inside the body paragraph — a compact pill with the field
+   label, an optional unit, a screw-bolt for settings, and an × to remove.
+   contentEditable=false so the caret treats it as a single atom. */
+.jano-tw .tp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px 2px 9px;
+  margin: 0 2px;
+  background: var(--tp-teal-wash);
+  color: var(--tp-teal);
+  border-radius: 999px;
+  font-size: 0.92em;
+  line-height: 1.4;
+  user-select: none;
+  vertical-align: baseline;
+}
+.jano-tw .tp-chip-label {
+  font-weight: 500;
+}
+.jano-tw .tp-chip-unit {
+  color: var(--tp-fg-3);
+  font-size: 0.85em;
+}
+.jano-tw .tp-chip-bolt,
+.jano-tw .tp-chip-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: transparent;
+  color: currentColor;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.12s, background 0.12s;
+}
+.jano-tw .tp-chip:hover .tp-chip-bolt,
+.jano-tw .tp-chip:hover .tp-chip-x {
+  opacity: 1;
+}
+.jano-tw .tp-chip-bolt:hover,
+.jano-tw .tp-chip-x:hover {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+/* Idle "+" pill — a single floating button that appears just below the
+   caret ~400ms after the doctor pauses typing in a body run. Absolutely
+   positioned relative to `.tp-sheet` (which is position: relative).
+   Clicking it drops a variable at the caret and clears itself. */
+.jano-tw .tp-idle-plus {
+  position: absolute;
+  z-index: 6;
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: none;
+  background: var(--tp-teal);
+  color: #0e1a15;
+  cursor: pointer;
+  transform: translate(-50%, 0);
+  box-shadow: 0 4px 14px -4px rgba(127, 217, 190, 0.55);
+  animation: tp-idle-plus-in 0.18s ease-out both;
+}
+.jano-tw .tp-idle-plus:hover {
+  filter: brightness(1.1);
+}
+.jano-tw .tp-idle-plus:focus-visible {
+  outline: 2px solid var(--tp-teal);
+  outline-offset: 2px;
+}
+@keyframes tp-idle-plus-in {
+  from { opacity: 0; transform: translate(-50%, -4px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .jano-tw .tp-idle-plus {
+    animation: none;
+  }
+}
+
+/* removable-field wrapper (authoring mode) */
+.jano-tw .tp-field-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.jano-tw .tp-field-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 2px;
+  border-radius: 50%;
+  border: none;
+  background: var(--tp-bg-3);
+  color: var(--tp-fg-3);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.jano-tw .tp-field-chip:hover .tp-field-x,
+.jano-tw .tp-field-chip:focus-within .tp-field-x {
+  opacity: 1;
+}
+.jano-tw .tp-field-x:hover {
+  background: var(--tp-crimson-wash);
+  color: var(--tp-crimson);
+}
+.jano-tw .tp-field-x:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--tp-teal);
+  outline-offset: 1px;
+}
+
+/* inline "name this field" input shown at the +Field insertion point */
+.jano-tw .tp-field-naming {
+  display: inline-flex;
+  margin: 0 3px;
+  vertical-align: middle;
+}
+.jano-tw .tp-field-naming input {
+  background: var(--tp-bg-2);
+  border: 1px solid var(--tp-teal);
+  border-radius: 6px;
+  padding: 2px 8px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--tp-fg-1);
+  width: 130px;
+}
+.jano-tw .tp-field-naming input::placeholder {
+  color: var(--tp-fg-4);
 }
 
 /* header */
@@ -69,8 +565,10 @@
   line-height: 1;
 }
 .jano-tw .tp-title {
-  font-size: 14px;
-  font-weight: 600;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
   color: var(--tp-fg-1);
 }
 .jano-tw .tp-x {
@@ -94,22 +592,26 @@
 .jano-tw .tp-note {
   padding: 24px 26px 22px;
   font-size: 16px;
-  line-height: 2.0;
-  color: var(--tp-fg-3);
+  line-height: 1.7;
+  color: var(--tp-fg-2);
 }
 .jano-tw .tp-block {
-  margin: 0;
+  margin: 0 0 10px;
+}
+.jano-tw .tp-block:last-child {
+  margin-bottom: 0;
 }
 .jano-tw .tp-p {
   margin: 0 0 4px;
 }
 .jano-tw .tp-heading {
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.13em;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--tp-fg-4);
-  margin: 18px 0 2px;
+  color: var(--tp-fg-3);
+  margin: 22px 0 6px;
   line-height: 1.4;
 }
 .jano-tw .tp-block:first-child .tp-heading {
@@ -133,6 +635,15 @@
   font-variant-numeric: tabular-nums;
   transition: background 0.12s, border-color 0.12s;
 }
+/* Short value fields (vitals, numbers) — Montserrat Black so they read like
+   the reference display: large bold number + small unit beside it. */
+.jano-tw .tp-blank:not(.tp-blank--long) {
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-size: 1.2em;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
 .jano-tw .tp-blank:hover {
   background: var(--tp-bg-2);
 }
@@ -155,11 +666,138 @@
 .jano-tw .tp-flag {
   font-size: 11px;
   font-weight: 600;
-  margin-left: 3px;
+  margin-left: 4px;
+  letter-spacing: 0.01em;
 }
 .jano-tw .tp-flag--low,
 .jano-tw .tp-flag--high {
   color: var(--tp-crimson);
+}
+.jano-tw .tp-flag--ok {
+  color: var(--tp-green);
+}
+/* Direction caret so low vs high reads without relying on colour alone. */
+.jano-tw .tp-flag--low::before {
+  content: '↓';
+  margin-right: 1px;
+}
+.jano-tw .tp-flag--high::before {
+  content: '↑';
+  margin-right: 1px;
+}
+.jano-tw .tp-flag--ok::before {
+  content: '✓';
+  margin-right: 1px;
+}
+
+/* unit label beside a doctor-configured field (bolt settings) */
+.jano-tw .tp-unit {
+  font-size: 0.6em;
+  font-weight: 500;
+  color: var(--tp-fg-3);
+  margin-left: 3px;
+}
+
+/* bolt/settings icon + popover — parameter name, unit, range (authoring) */
+.jano-tw .tp-bolt-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.jano-tw .tp-field-bolt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  margin-left: 2px;
+  border-radius: 50%;
+  border: none;
+  background: var(--tp-bg-3);
+  color: var(--tp-fg-3);
+  opacity: 0;
+  cursor: pointer;
+  transition: opacity 0.12s, background 0.12s, color 0.12s;
+}
+.jano-tw .tp-field-chip:hover .tp-field-bolt,
+.jano-tw .tp-bolt-wrap:focus-within .tp-field-bolt {
+  opacity: 1;
+}
+.jano-tw .tp-field-bolt:hover {
+  background: var(--tp-amber-wash);
+  color: var(--tp-amber);
+}
+.jano-tw .tp-field-bolt:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--tp-teal);
+  outline-offset: 1px;
+}
+.jano-tw .tp-bolt-popover {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 6px);
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--tp-bg-2);
+  border: 1px solid var(--tp-line-2);
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.7);
+  width: 168px;
+  white-space: normal;
+}
+.jano-tw .tp-bolt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--tp-fg-3);
+}
+.jano-tw .tp-bolt-row input {
+  background: var(--tp-bg-1);
+  border: 1px solid var(--tp-line-2);
+  border-radius: 5px;
+  padding: 4px 7px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--tp-fg-1);
+  width: 92px;
+}
+.jano-tw .tp-bolt-row input:focus {
+  outline: none;
+  border-color: var(--tp-teal);
+}
+.jano-tw .tp-bolt-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 2px;
+}
+.jano-tw .tp-bolt-cancel,
+.jano-tw .tp-bolt-save {
+  border: none;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.jano-tw .tp-bolt-cancel {
+  background: var(--tp-bg-3);
+  color: var(--tp-fg-2);
+}
+.jano-tw .tp-bolt-cancel:hover {
+  background: var(--tp-line-2);
+}
+.jano-tw .tp-bolt-save {
+  background: var(--tp-teal-wash);
+  color: var(--tp-teal);
+  font-weight: 600;
+}
+.jano-tw .tp-bolt-save:hover {
+  filter: brightness(1.12);
 }
 
 /* pick tokens */
@@ -186,9 +824,13 @@
 .jano-tw .tp-pick:hover {
   filter: brightness(1.12);
 }
+.jano-tw .tp-pick:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
 .jano-tw .tp-chev {
-  font-size: 10px;
-  opacity: 0.7;
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 .jano-tw .tp-pick--teal {
   background: var(--tp-teal-wash);
@@ -271,6 +913,10 @@
   background: var(--tp-bg-3);
   color: var(--tp-fg-1);
 }
+.jano-tw .tp-menu-item:focus-visible {
+  outline: 2px solid var(--tp-teal);
+  outline-offset: -2px;
+}
 .jano-tw .tp-menu-item.is-sel {
   color: var(--tp-fg-1);
 }
@@ -278,6 +924,29 @@
   margin-left: auto;
   color: var(--tp-teal);
   font-size: 13px;
+}
+
+/* Reduced motion — collapse every template transition to instant. */
+@media (prefers-reduced-motion: reduce) {
+  .jano-tw .tp-blank,
+  .jano-tw .tp-pick,
+  .jano-tw .tp-x,
+  .jano-tw .tp-menu-item,
+  .jano-tw .tp-sheet,
+  .jano-tw .tp-pencil,
+  .jano-tw .tp-save-btn,
+  .jano-tw .tp-editable-text,
+  .jano-tw .tp-field-x,
+  .jano-tw .tp-field-bolt,
+  .jano-tw .tp-idle-plus,
+  .jano-tw .tp-bolt-cancel,
+  .jano-tw .tp-bolt-save {
+    transition: none;
+  }
+  .jano-tw .tp-editable-text:hover,
+  .jano-tw .tp-editable-text:focus {
+    transform: none;
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
@@ -313,7 +982,7 @@
 .doctor-notepad .ProseMirror [data-template-block] .tp-head {
   background: transparent;
   border-bottom: none;
-  padding: 0 0 6px;
+  padding: 0 0 16px;
   gap: 9px;
 }
 .doctor-notepad .ProseMirror [data-template-block] .tp-note {
@@ -325,9 +994,10 @@
   margin-top: 0;
 }
 
-/* SELECTION — no visual change; template is already part of the flow.
-   ProseMirror puts `.ProseMirror-selectednode` on the `.react-renderer
-   .node-templateBlock` wrapper, so the override must target that element. */
+/* SELECTION — no visual change on the wrapper itself; template is already
+   part of the flow. ProseMirror puts `.ProseMirror-selectednode` on the
+   `.react-renderer .node-templateBlock` wrapper, so the override must
+   target that element. */
 .doctor-notepad .ProseMirror .react-renderer.node-templateBlock.ProseMirror-selectednode,
 .doctor-notepad .ProseMirror [data-template-block].is-node-selected,
 .doctor-notepad .ProseMirror [data-template-block].ProseMirror-selectednode {
@@ -338,6 +1008,10 @@
   background: transparent !important;
 }
 
+/* No inline-mode chrome override for pending-delete — the letter-glow
+   text-shadow already lands via the outer .jano-tw rule and needs no
+   background/border/shadow to look intentional. */
+
 /* Orphan stub (template id no longer in TEMPLATES) — small dashed warning. */
 .doctor-notepad .ProseMirror [data-template-block].tp-orphan .tp-sheet {
   border: 1px dashed var(--tp-line-2, #3d3c38);
@@ -345,3 +1019,4 @@
   padding: 8px 12px;
   margin: 14px 0;
 }
+

@@ -143,6 +143,12 @@ export interface ProseFieldPart {
   vital?: VitalKind;
   options?: string[];
   variant?: PickVariant;
+  /** Doctor-configured unit/range for a plain `num` field (authoring-mode
+   *  "bolt" settings) — drives the green/red in-range indicator generically,
+   *  independent of the hardcoded `vital` flags above. */
+  unit?: string;
+  min?: number;
+  max?: number;
 }
 
 export type ProsePart = ProseTextPart | ProseFieldPart;
@@ -210,8 +216,13 @@ export interface EditorApi {
   runWholeNoteAi: (actionId: AiAction) => void;
   /** Open the structured "Add Template" modal. */
   openTemplateCreator: () => void;
+  /** Drop a blank templateBlock scaffold at the cursor and jump straight
+   *  into edit mode — the "+" beside Dictate. */
+  insertBlankTemplate: () => void;
   /** Clear the canvas to start a fresh note. */
   newPage: () => void;
+  /** Load the first-visit demo note (two filled templates + prose). */
+  loadDemo: () => void;
   /** False when the AI backend env is not configured. */
   aiConfigured: boolean;
 }

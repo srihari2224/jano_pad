@@ -260,72 +260,118 @@
 /* `body ` prefix raises specificity above notepad.css (which loads later).
    Warm palette to match the prose template notes. */
 body .np-popup {
-  background: #1f1e1d;
-  border-color: #34332f;
-  border-radius: 12px;
-  box-shadow: 0 18px 44px -16px rgba(0, 0, 0, 0.75);
+  background: #18181c;
+  border-color: #2a2a32;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px -14px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255,255,255,0.04);
 }
 body .np-popup__header {
-  background: #1f1e1d;
-  border-bottom-color: #34332f;
+  background: #18181c;
+  border-bottom-color: #26262e;
 }
 body .np-popup__header-badge {
-  background: rgba(232, 115, 107, 0.14);
-  color: #e8736b;
+  background: rgba(229, 75, 75, 0.18);
+  color: #e54b4b;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-weight: 800;
 }
 body .np-popup__header-label {
-  color: #b6b3aa;
+  color: #9a9aa8;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 body .np-popup__header-hint,
 body .np-popup__group-label {
-  color: #6a6862;
+  color: #54545e;
+}
+body .np-popup__group-label {
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
 }
 body .np-popup__group-label::after,
 body .np-popup__group-divider {
-  background: #34332f;
+  background: #26262e;
 }
 body .np-popup__empty {
-  color: #8b8980;
+  color: #6a6a74;
 }
 body .np-item__title {
-  color: #eceae3;
+  color: #ececf0;
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: -0.01em;
 }
 body .np-item__desc {
-  color: #8b8980;
-  text-transform: capitalize;
+  color: #6a6a74;
+  font-size: 11px;
 }
 body .np-item:hover {
-  background: #262624;
+  background: rgba(255, 255, 255, 0.05);
 }
 body .np-item.is-selected {
-  background: rgba(232, 115, 107, 0.10);
+  background: rgba(229, 75, 75, 0.12);
 }
 body .np-item.is-selected::before {
-  background: #e8736b;
+  background: #e54b4b;
 }
 body .np-item__dose {
-  background: rgba(169, 216, 134, 0.13);
-  color: #a9d886;
-  border-color: rgba(169, 216, 134, 0.3);
+  background: rgba(18, 176, 95, 0.16);
+  color: #3dd68c;
+  border-color: rgba(18, 176, 95, 0.3);
+  font-family: 'Montserrat', 'Figtree', sans-serif;
+  font-weight: 700;
+  font-size: 10px;
 }
 
-/* coloured icon squares — warm washes + stroke icon, per type / category */
+/* coloured icon squares — vibrant brand washes with borders, per type */
 body .np-item__icon {
-  border: none;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 body .np-ic--medicine,
-body .np-ic--summary { background: rgba(169, 216, 134, 0.14); color: #a9d886; }
+body .np-ic--summary {
+  background: rgba(18, 176, 95, 0.17);
+  color: #3dd68c;
+  border-color: rgba(18, 176, 95, 0.32);
+}
 body .np-ic--diagnosis,
-body .np-ic--complication { background: rgba(232, 115, 107, 0.14); color: #e8736b; }
+body .np-ic--complication {
+  background: rgba(229, 75, 75, 0.17);
+  color: #f07070;
+  border-color: rgba(229, 75, 75, 0.32);
+}
 body .np-ic--labtest,
 body .np-ic--vitals,
-body .np-ic--dosage { background: rgba(227, 180, 104, 0.16); color: #e3b468; }
-body .np-ic--date { background: rgba(127, 217, 190, 0.14); color: #7fd9be; }
-body .np-ic--assessment { background: rgba(110, 168, 232, 0.16); color: #6ea8e8; }
-body .np-ic--medication { background: rgba(184, 154, 224, 0.18); color: #b89ae0; }
+body .np-ic--dosage {
+  background: rgba(255, 208, 0, 0.14);
+  color: #e8c545;
+  border-color: rgba(255, 208, 0, 0.28);
+}
+body .np-ic--date {
+  background: rgba(52, 211, 183, 0.15);
+  color: #34d3b7;
+  border-color: rgba(52, 211, 183, 0.28);
+}
+body .np-ic--assessment {
+  background: rgba(79, 140, 255, 0.16);
+  color: #7ba8ff;
+  border-color: rgba(79, 140, 255, 0.30);
+}
+body .np-ic--medication {
+  background: rgba(162, 113, 255, 0.16);
+  color: #c096f7;
+  border-color: rgba(162, 113, 255, 0.30);
+}
 body .np-ic--heading,
 body .np-ic--list,
-body .np-ic--divider { background: #2c2b29; color: #b6b3aa; }
+body .np-ic--divider {
+  background: rgba(255, 255, 255, 0.07);
+  color: #c8c8cd;
+  border-color: rgba(255, 255, 255, 0.11);
+}
 
 /* Selection bubble — formatting bar + AI dropdown */
 .np-sel-ai {
@@ -417,3 +463,12 @@ body .np-ic--divider { background: #2c2b29; color: #b6b3aa; }
   background: rgba(255, 255, 255, 0.06);
   color: #fff;
 }
+
+/* ── Popup scrollbar (always dark in dark mode) ─────────────────────── */
+body .np-popup::-webkit-scrollbar { width: 5px; }
+body .np-popup::-webkit-scrollbar-track { background: transparent; }
+body .np-popup::-webkit-scrollbar-thumb {
+  background: #3a3a40;
+  border-radius: 4px;
+}
+

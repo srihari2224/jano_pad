@@ -1,43 +1,129 @@
-/**
- * PageShell — minimal page wrapper that renders the notepad directly.
- *
- * The previous Capacities-style chrome (top bar, left sidebar with
- * outline/tasks/files/search tabs, and the floating action buttons) was
- * removed per request — only the editable page title and the editor body
- * remain. The notepad autosaves to localStorage on its own, so no Save
- * button is needed.
- */
-import type { EditorApi } from '../../types';
+import { useEffect, useState } from 'react';
+import type { EditorApi } from '../../types/index';
+import DictationModal from '../DictationModal/DictationModal';
 import './pageshell.css';
 import './dark-page.css';
 
+const DEMO_SEEN_KEY = 'janopad_demo_seen';
+
+function MicIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg>
+  );
+}
+
+function NewTemplateIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M8 3v10M3 8h10"/>
+    </svg>
+  );
+}
+
 export default function PageShell({
   children,
+  patientId,
+  editorApi,
   title,
   onTitleChange,
 }: {
   children: React.ReactNode;
-  /** Reserved for Phase 4 (per-patient note routing). */
   patientId: string;
-  /** Still accepted (App wires it) but no longer used by the bare shell. */
   editorApi: EditorApi | null;
   title: string;
   onTitleChange: (next: string) => void;
 }) {
+  const [isDictating, setIsDictating] = useState(false);
+
+  // First-visit demo CTA: show only when there's no saved draft for this
+  // patient and the demo hasn't been loaded before.
+  const [showDemo, setShowDemo] = useState(false);
+  useEffect(() => {
+    try {
+      const hasDraft = !!localStorage.getItem(`draft_note_${patientId}`);
+      const seen = !!localStorage.getItem(DEMO_SEEN_KEY);
+      setShowDemo(!hasDraft && !seen);
+    } catch {
+      /* ignore */
+    }
+  }, [patientId]);
+
+  const handleLoadDemo = () => {
+    editorApi?.loadDemo();
+    setShowDemo(false);
+  };
+
+  const focusBody = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      editorApi?.editor?.commands.focus('start');
+    }
+  };
+
   return (
     <div className="cap-root cap-root--bare">
       <main className="cap-content">
         <div className="cap-page">
-          <input
-            className="cap-page__title"
-            placeholder="Page Title"
-            value={title}
-            onChange={(e) => onTitleChange(e.target.value)}
-            spellCheck={false}
-          />
+          <div className="cap-page__titlerow">
+            <input
+              className="cap-page__title"
+              placeholder="Page Title"
+              value={title}
+              onChange={(e) => onTitleChange(e.target.value)}
+              onKeyDown={focusBody}
+              spellCheck={false}
+            />
+            {showDemo && editorApi && (
+              <button
+                type="button"
+                className="cap-demo-btn"
+                onClick={handleLoadDemo}
+              >
+                Demo
+              </button>
+            )}
+            {editorApi && (
+              <button
+                type="button"
+                className="cap-new-template-btn"
+                onClick={() => editorApi.insertBlankTemplate()}
+                aria-label="New template"
+                title="New template"
+              >
+                <NewTemplateIcon />
+              </button>
+            )}
+            <button
+              type="button"
+              className={`cap-dictate-btn${isDictating ? ' is-recording' : ''}`}
+              onClick={() => setIsDictating(true)}
+              aria-label="Start voice dictation"
+            >
+              <MicIcon />
+              Dictate
+            </button>
+          </div>
           <div className="cap-page__body">{children}</div>
         </div>
       </main>
+
+      <footer className="cap-footer">
+        <span className="cap-footer__logo" aria-label="Jano Health">
+          <span className="cap-footer__jano">jano</span>
+          <span className="cap-footer__plus">+</span>
+        </span>
+      </footer>
+
+      <DictationModal
+        isOpen={isDictating}
+        onClose={() => setIsDictating(false)}
+        editorApi={editorApi}
+      />
     </div>
   );
 }

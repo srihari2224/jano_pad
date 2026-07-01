@@ -86,6 +86,85 @@ import './styles/ai-features.css';
 const PLACEHOLDER_TEXT =
   'Start typing, or press / to insert, @ to mention a patient or doctor...';
 
+/* First-visit demo. One-click loads a sample note so a new viewer can see how
+   filled templates + prose render together. `janopad_demo_seen` is set once the
+   demo is loaded so the call-to-action never reappears. */
+const DEMO_SEEN_KEY = 'janopad_demo_seen';
+
+/* Two real templateBlock nodes (filled) wrapped in surrounding prose — exactly
+   the doc shape an authored note would have. Field keys match the `f` ids in
+   src/data/templates.ts. */
+const DEMO_DOC = {
+  type: 'doc',
+  content: [
+    {
+      type: 'heading',
+      attrs: { level: 2 },
+      content: [{ type: 'text', text: 'Mr. Ramesh K — 58 / M · MRN 4471' }],
+    },
+    {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text: 'Maintenance haemodialysis, 3 sessions/week. Below are the two notes captured during today’s session — this is how a completed note looks in Jano Pad.',
+        },
+      ],
+    },
+    {
+      type: 'templateBlock',
+      attrs: {
+        templateId: 'tmpl_pre_dialysis',
+        values: {
+          bp: '140/90',
+          pulse: '82',
+          spo2: '98',
+          temp: '98.6',
+          weight: '68.5',
+          grbs: '124',
+          access_type: 'AVF',
+          access_site: 'Left forearm',
+          complaints: 'Mild fatigue, no chest pain or breathlessness.',
+          ufgoal: '2.5',
+          duration: '240',
+          bfr: '300',
+          dial_na: '138',
+          dial_k: '2.0',
+        },
+      },
+    },
+    { type: 'paragraph' },
+    {
+      type: 'templateBlock',
+      attrs: {
+        templateId: 'tmpl_post_dialysis',
+        values: {
+          bp: '128/82',
+          pulse: '76',
+          spo2: '99',
+          temp: '98.4',
+          weight: '66.0',
+          uf: '2.4',
+          duration: '240',
+          access: 'AVF',
+          complications: ['None'],
+          condition: 'Stable',
+          notes: 'Tolerated the session well. No intradialytic complications.',
+        },
+      },
+    },
+    {
+      type: 'paragraph',
+      content: [
+        {
+          type: 'text',
+          text: 'Plan: continue current prescription. Review labs next session. Patient counselled on fluid restriction.',
+        },
+      ],
+    },
+  ],
+};
+
 /* HTML for the /vitals editable table. */
 const VITALS_TABLE_HTML = `
 <table>
@@ -233,14 +312,6 @@ const SaveShortcut = Extension.create({
   },
 });
 
-/** Count words and lines from the editor's plain text. */
-function getCounts(editor: Editor | null): { words: number; lines: number } {
-  if (!editor) return { words: 0, lines: 0 };
-  const text = editor.getText({ blockSeparator: '\n' });
-  const words = (text.match(/\S+/g) || []).length;
-  const lines = text.length ? text.split('\n').length : 1;
-  return { words, lines };
-}
 
 interface Props {
   patientId?: string;
@@ -527,7 +598,9 @@ export default function DoctorNotePad({
   /* --- the editor -------------------------------------------------- */
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        dropcursor: { color: '#7fd9be', width: 2 },
+      }),
       TextStyle,
       Color,
       Underline,
@@ -662,6 +735,47 @@ export default function DoctorNotePad({
         { type: 'paragraph' },
       ])
       .run();
+    // Locate the template we just inserted: ProseMirror may reposition a block
+    // node (e.g. split the current paragraph), so the pre-insert caret position
+    // isn't reliable — find the templateBlock closest to the caret instead.
+    const caret = editor.state.selection.from;
+    let at: number | null = null;
+    let best = Infinity;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'templateBlock') {
+        const d = Math.abs(pos - caret);
+        if (d < best) {
+          best = d;
+          at = pos;
+        }
+      }
+    });
+    // Drop — and keep — the cursor in the template's first field so the doctor
+    // can type straight away, no mouse click. We re-grab focus across a short
+    // window because the editor's own post-insert focus is deferred and would
+    // otherwise steal it back a frame or two later. The `!== field` guard means
+    // that once the doctor is actually typing in the field we stop interfering.
+    const placeCaretEnd = (el: HTMLElement) => {
+      if (!el.isContentEditable) return;
+      const sel = window.getSelection();
+      if (!sel) return;
+      const r = document.createRange();
+      r.selectNodeContents(el);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    };
+    const focusFirstField = (tries = 0) => {
+      if (at == null) return;
+      const dom = editor.view.nodeDOM(at) as HTMLElement | null;
+      const field = dom?.querySelector?.('.tp-blank, .tp-pick') as HTMLElement | null;
+      if (field && document.activeElement !== field) {
+        field.focus();
+        placeCaretEnd(field);
+      }
+      if (tries < 20) requestAnimationFrame(() => focusFirstField(tries + 1));
+    };
+    if (at != null) requestAnimationFrame(() => focusFirstField());
     setHeaderSaved(false);
     setDraftStatus('idle');
     scheduleAutosave(editor);
@@ -927,6 +1041,44 @@ export default function DoctorNotePad({
     setDraftStatus('idle');
   };
 
+  /* --- insert a blank template scaffold from the "+" header button ----- */
+  /* Drops a fresh templateBlock at the current selection pointing at the
+     BLANK_SCAFFOLD_ID stub, with startInEdit=true so the doctor lands in
+     edit mode immediately and can start typing the title. */
+  const insertBlankTemplate = () => {
+    if (!editor) return;
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: 'templateBlock',
+        attrs: {
+          templateId: 'tmpl_blank_scaffold',
+          values: {},
+          overrides: null,
+          startInEdit: true,
+        },
+      })
+      .run();
+  };
+
+  /* --- first-visit demo -------------------------------------------- */
+  /* Load the sample note into the editor and mark the demo as seen so the
+     header CTA (rendered by PageShell) retires for good. */
+  const loadDemo = () => {
+    if (!editor) return;
+    editor.commands.setContent(DEMO_DOC);
+    editor.commands.focus('end');
+    try {
+      localStorage.setItem(DEMO_SEEN_KEY, '1');
+    } catch {
+      /* ignore quota / privacy-mode errors */
+    }
+    setHeaderSaved(false);
+    setDraftStatus('idle');
+    scheduleAutosave(editor);
+  };
+
   /* --- publish the imperative API to the shell --------------------- */
   /* Methods delegate through a ref so the published object stays stable while
      always invoking the latest closures. */
@@ -934,13 +1086,17 @@ export default function DoctorNotePad({
     save: () => {},
     runWholeNoteAi: (_a: AiAction) => {},
     openTemplateCreator: () => {},
+    insertBlankTemplate: () => {},
     newPage: () => {},
+    loadDemo: () => {},
   });
   apiFnsRef.current = {
     save: handleSave,
     runWholeNoteAi,
     openTemplateCreator,
+    insertBlankTemplate,
     newPage,
+    loadDemo,
   };
 
   useEffect(() => {
@@ -950,7 +1106,9 @@ export default function DoctorNotePad({
       save: () => apiFnsRef.current.save(),
       runWholeNoteAi: (a) => apiFnsRef.current.runWholeNoteAi(a),
       openTemplateCreator: () => apiFnsRef.current.openTemplateCreator(),
+      insertBlankTemplate: () => apiFnsRef.current.insertBlankTemplate(),
       newPage: () => apiFnsRef.current.newPage(),
+      loadDemo: () => apiFnsRef.current.loadDemo(),
       aiConfigured: isAiConfigured,
     });
     return () => onReady(null);
@@ -1034,43 +1192,6 @@ export default function DoctorNotePad({
   }, [tmplSaved]);
 
 
-  const { words, lines } = getCounts(editor);
-
-  /* Count templateBlock nodes for the status-bar suffix. */
-  let templateCount = 0;
-  if (editor) {
-    editor.state.doc.descendants((n) => {
-      if (n.type.name === 'templateBlock') templateCount += 1;
-    });
-  }
-
-  /* --- status-bar draft indicator ---------------------------------- */
-  let draftEl = null;
-  if (restored) {
-    draftEl = (
-      <span className="np-statusbar__draft is-saved">
-        <IconCheck size={11} />
-        Draft restored
-      </span>
-    );
-  } else if (draftStatus === 'saving') {
-    draftEl = (
-      <span className="np-statusbar__draft is-saving">
-        <IconSpinner size={12} />
-        Saving…
-      </span>
-    );
-  } else if (draftStatus === 'saved') {
-    draftEl = (
-      <span className="np-statusbar__draft is-saved">
-        <IconCheck size={11} />
-        Draft saved
-      </span>
-    );
-  } else {
-    draftEl = <span className="np-statusbar__draft is-idle">Draft saved</span>;
-  }
-
   return (
     <div className="doctor-notepad">
       {/* Template creation lives in the selection bubble menu (the "+" button)
@@ -1082,18 +1203,6 @@ export default function DoctorNotePad({
       <div className="np-editor-area">
         <EditorContent editor={editor} />
       </div>
-
-      {/* ZONE 3b — STATUS BAR */}
-      <div className="np-statusbar">
-        <span className="np-statusbar__count">
-          {words} {words === 1 ? 'word' : 'words'} · {lines}{' '}
-          {lines === 1 ? 'line' : 'lines'}
-          {templateCount > 0 &&
-            ` · ${templateCount} ${templateCount === 1 ? 'template' : 'templates'}`}
-        </span>
-        {draftEl}
-      </div>
-
 
       {/* SELECTION BUBBLE — formatting + AI, appears above a text selection.
           Portaled to <body> so the scroll container can't clip it (P2b-4). */}
