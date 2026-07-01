@@ -544,6 +544,20 @@ import {
   getCustomTemplateById,
 } from './customTemplates';
 
+/** In-editor scaffold used when the doctor clicks "+" beside Dictate to
+ *  create a fresh template from scratch. Resolvable by id so the NodeView
+ *  renders; deliberately NOT surfaced in getAllTemplates() so it never
+ *  appears in the slash menu — the doctor's `Save` in edit mode is what
+ *  publishes the real template. */
+export const BLANK_SCAFFOLD_ID = 'tmpl_blank_scaffold';
+export const BLANK_SCAFFOLD_TEMPLATE: Template = {
+  id: BLANK_SCAFFOLD_ID,
+  title: '',
+  category: 'assessment',
+  accent: 'teal',
+  prose: [{ heading: '', parts: [{ t: '' }] }],
+};
+
 const wrap = (t: Template): TemplateListItem => ({
   id: t.id,
   title: t.title,
@@ -560,6 +574,7 @@ export function getAllTemplates(): TemplateListItem[] {
 }
 
 export function getTemplateById(id: string): Template | null {
+  if (id === BLANK_SCAFFOLD_ID) return BLANK_SCAFFOLD_TEMPLATE;
   return (
     TEMPLATES.find((t) => t.id === id) || getCustomTemplateById(id) || null
   );

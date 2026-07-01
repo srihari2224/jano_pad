@@ -598,7 +598,9 @@ export default function DoctorNotePad({
   /* --- the editor -------------------------------------------------- */
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        dropcursor: { color: '#7fd9be', width: 2 },
+      }),
       TextStyle,
       Color,
       Underline,
@@ -1039,6 +1041,27 @@ export default function DoctorNotePad({
     setDraftStatus('idle');
   };
 
+  /* --- insert a blank template scaffold from the "+" header button ----- */
+  /* Drops a fresh templateBlock at the current selection pointing at the
+     BLANK_SCAFFOLD_ID stub, with startInEdit=true so the doctor lands in
+     edit mode immediately and can start typing the title. */
+  const insertBlankTemplate = () => {
+    if (!editor) return;
+    editor
+      .chain()
+      .focus()
+      .insertContent({
+        type: 'templateBlock',
+        attrs: {
+          templateId: 'tmpl_blank_scaffold',
+          values: {},
+          overrides: null,
+          startInEdit: true,
+        },
+      })
+      .run();
+  };
+
   /* --- first-visit demo -------------------------------------------- */
   /* Load the sample note into the editor and mark the demo as seen so the
      header CTA (rendered by PageShell) retires for good. */
@@ -1063,6 +1086,7 @@ export default function DoctorNotePad({
     save: () => {},
     runWholeNoteAi: (_a: AiAction) => {},
     openTemplateCreator: () => {},
+    insertBlankTemplate: () => {},
     newPage: () => {},
     loadDemo: () => {},
   });
@@ -1070,6 +1094,7 @@ export default function DoctorNotePad({
     save: handleSave,
     runWholeNoteAi,
     openTemplateCreator,
+    insertBlankTemplate,
     newPage,
     loadDemo,
   };
@@ -1081,6 +1106,7 @@ export default function DoctorNotePad({
       save: () => apiFnsRef.current.save(),
       runWholeNoteAi: (a) => apiFnsRef.current.runWholeNoteAi(a),
       openTemplateCreator: () => apiFnsRef.current.openTemplateCreator(),
+      insertBlankTemplate: () => apiFnsRef.current.insertBlankTemplate(),
       newPage: () => apiFnsRef.current.newPage(),
       loadDemo: () => apiFnsRef.current.loadDemo(),
       aiConfigured: isAiConfigured,

@@ -3,8 +3,11 @@
  * INSIDE the editor flow.
  *
  * The template lives in the document like any paragraph or chip — type
- * around it, type below it, delete with Backspace from the line after it,
- * or click its × in the inline header. Storage: { templateId, values }
+ * around it, type below it, or click its × in the inline header. Backspace
+ * from the line after it uses ProseMirror's default atom-node behaviour:
+ * the first press turns it into a NodeSelection (the card glows as a
+ * warning — see `.is-node-selected` in prose-template.css) and only a
+ * second Backspace actually deletes it. Storage: { templateId, values }
  * persist with the rest of the doc in editor.getJSON().
  */
 import { Node } from '@tiptap/core';
@@ -16,13 +19,23 @@ export const TemplateNode = Node.create({
   group: 'block',
   atom: true,
   selectable: true,
-  draggable: false,
+  draggable: true,
   isolating: true,
 
   addAttributes() {
     return {
       templateId: { default: null },
       values: { default: {} },
+      // Per-instance authoring edits (title/heading/text changes, added or
+      // removed fields) layered on top of the shared template. Null until
+      // the doctor makes the first structural edit in this note; the base
+      // template is used until then. Never written back to the shared
+      // template definition — see docs/superpowers/specs/2026-07-01-*.
+      overrides: { default: null },
+      // One-shot flag: true right after the "+ new template" button inserts
+      // a blank scaffold, so the NodeView boots into edit mode without a
+      // second click. Cleared to false as soon as the view mounts.
+      startInEdit: { default: false },
     };
   },
 
@@ -42,29 +55,5 @@ export const TemplateNode = Node.create({
 
   addNodeView() {
     return ReactNodeViewRenderer(TemplateNodeView);
-  },
-
-  /**
-   * One-press Backspace delete: when the cursor sits at the start of the
-   * block immediately AFTER a templateBlock, remove the template entirely.
-   * (Standard ProseMirror selects it first; we collapse that to one press.)
-   */
-  addKeyboardShortcuts() {
-    return {
-      Backspace: () => {
-        const { state, view } = this.editor;
-        const { selection } = state;
-        if (!selection.empty) return false;
-        const { $from } = selection;
-        if ($from.parentOffset !== 0) return false;
-        const before = $from.nodeBefore;
-        if (before && before.type.name === 'templateBlock') {
-          const start = $from.pos - before.nodeSize;
-          view.dispatch(state.tr.delete(start, $from.pos));
-          return true;
-        }
-        return false;
-      },
-    };
   },
 });
